@@ -30,6 +30,7 @@ results <- as.data.frame(gs_read(results_sheet))
 #                                     "character", "character"))
 
 library(stringi)
+library(stringr)
 results$ФИ <- str_to_title(results$ФИ)
 
 # У сошедших в графе "место" стоит 0, у участников в/к - "в/к"
@@ -40,19 +41,20 @@ results$Результат_сек <- as.numeric(as.difftime(as.character(results
 coefs_group <- read.csv2(file = "group_coef.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
                          colClasses = c("character", "double"))
 
-library(stringr)
 results$Сложность <- substr(results$Группа, str_locate(results$Группа, paste0("(", paste0(coefs_group$Сложность, collapse = "|"), ")")), 1000)
 library(dplyr)
 results <- left_join(results, coefs_group, by = c("Сложность" = "Сложность"))
 
 winning_time <- results %>% filter(Место != 0) %>% group_by(Группа) %>% summarise(Время_победителя = min(Результат_сек))
+#TODO: может случиться ситуация, когда лидер по группе бежал в/к, тогда у нас не будет времени победителя - подумать после
 
 results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
 
 coefs_comps <- read.csv2(file = "2017_ranking_starts_and_coefs.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
                         colClasses = c(rep("character", 4), "double"))
 
-coef_comp <- coefs_comps$коэффициент[coefs_comps$дата == gsub(pattern = ".*([0-9]{8}).*", replacement = "\\1", x = results_filename)]
+# coef_comp <- coefs_comps$коэффициент[coefs_comps$дата == gsub(pattern = ".*([0-9]{8}).*", replacement = "\\1", x = results_filename)]
+coef_comp <- coefs_comps$коэффициент[coefs_comps$дата == competition_date]
 
 results <- mutate(results, Очки = round(coef_comp*1000*Коэффициент*(2* (Время_победителя / Результат_сек) - 1)))
 results$Очки[results$Очки <= 1] <- 1
