@@ -65,6 +65,9 @@ results$Сумма <- apply(X = select(results, starts_with("Очки")),
 
 sum <- left_join(reference_database, results, by = c("ФИ", "ГР"))
 
+# Сортируем
+sum <- sum[order(sum$Группа, -sum$Сумма), ]
+
 write.csv2(x = sum,
            file = paste0("results/ranking_sum_by_date", last(comp_dates), ".csv"),
            row.names = FALSE,
