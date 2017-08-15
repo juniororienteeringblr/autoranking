@@ -4,7 +4,8 @@ library(googlesheets)
 # Шапка файлов результатов должна быть следующей
 # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа
 
-competition_date <- readline()
+# competition_date <- readline()
+competition_date <- "20170618"
 
 # Читаем список всех доступных файлов
 # возможно, попросит аутентификации в браузере!
@@ -57,7 +58,8 @@ coefs_comps <- read.csv2(file = "2017_ranking_starts_and_coefs.txt", encoding = 
 coef_comp <- coefs_comps$коэффициент[coefs_comps$дата == competition_date]
 
 results <- mutate(results, Очки = round(coef_comp*1000*Коэффициент*(2* (Время_победителя / Результат_сек) - 1)))
-results$Очки[results$Очки <= 1] <- 1
+# results$Очки[results$Очки <= 1] <- 1
+results$Очки[results$Очки < 1] <- 0
 results$Очки[is.na(results$Очки)] <- 0
 results$Очки[results$Место == 0] <- 0
 

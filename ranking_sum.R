@@ -68,7 +68,20 @@ sum <- left_join(reference_database, results, by = c("ФИ", "ГР"))
 # Сортируем
 sum <- sum[order(sum$Группа, -sum$Сумма), ]
 
+library(xlsx) #load the package
+filename = paste0("results/ranking_sum_by_date", last(comp_dates), "1.xlsx")
+
+for(i in sort(unique(sum$Группа))) {
+  if(!file.exists(filename)) {
+    write.xlsx(x = filter(sum, Группа == i), file = filename,
+               sheetName = i, row.names = FALSE, showNA = FALSE)
+  } else {
+    write.xlsx(x = filter(sum, Группа == i), file = filename, append = TRUE,
+               sheetName = i, row.names = FALSE, showNA = FALSE)
+  }
+}
+
 write.csv2(x = sum,
-           file = paste0("results/ranking_sum_by_date", last(comp_dates), ".csv"),
+           file = paste0("results/ranking_sum_by_date", last(comp_dates), "1.csv"),
            row.names = FALSE,
            fileEncoding = "UTF-8", na = "")
