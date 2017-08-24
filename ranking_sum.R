@@ -63,6 +63,11 @@ results$Сумма <- apply(X = select(results, starts_with("Очки")),
                        MARGIN = 1,
                        FUN = function(x) {sum(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE)})
 
+results$Среднее <- apply(X = select(results, starts_with("Очки")),
+                       MARGIN = 1,
+                       FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE))})
+
+
 sum <- left_join(reference_database, results, by = c("ФИ", "ГР"))
 
 # Сортируем
@@ -73,15 +78,14 @@ filename = paste0("results/ranking_sum_by_date", last(comp_dates), "1.xlsx")
 
 for(i in sort(unique(sum$Группа))) {
   if(!file.exists(filename)) {
-    write.xlsx(x = filter(sum, Группа == i), file = filename,
+    x = filter(sum, Группа == i)
+    x = cbind(`№` = 1:nrow(x), x, Место = 1:nrow(x))
+    write.xlsx(x, file = filename,
                sheetName = i, row.names = FALSE, showNA = FALSE)
   } else {
-    write.xlsx(x = filter(sum, Группа == i), file = filename, append = TRUE,
+    x = filter(sum, Группа == i)
+    x = cbind(`№` = 1:nrow(x), x, Место = 1:nrow(x))
+    write.xlsx(x, file = filename, append = TRUE,
                sheetName = i, row.names = FALSE, showNA = FALSE)
   }
 }
-
-write.csv2(x = sum,
-           file = paste0("results/ranking_sum_by_date", last(comp_dates), "1.csv"),
-           row.names = FALSE,
-           fileEncoding = "UTF-8", na = "")

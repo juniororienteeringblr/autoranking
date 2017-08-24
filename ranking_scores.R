@@ -33,6 +33,7 @@ results <- as.data.frame(gs_read(results_sheet))
 library(stringi)
 library(stringr)
 results$ФИ <- str_to_title(results$ФИ)
+results$ФИ <- str_replace_all(results$ФИ, c("ё" = "е", "Ё" = "Е"))
 
 # У сошедших в графе "место" стоит 0, у участников в/к - "в/к"
 results$Место[results$Место == "в/к"] <- "0"
