@@ -74,7 +74,7 @@ sum <- left_join(reference_database, results, by = c("ФИ", "ГР"))
 sum <- sum[order(sum$Группа, -sum$Сумма), ]
 
 library(xlsx) #load the package
-filename = paste0("results/ranking_sum_by_date", last(comp_dates), "1.xlsx")
+filename = paste0("results/ranking_sum_by_date", last(comp_dates), ".xlsx")
 
 for(i in sort(unique(sum$Группа))) {
   if(!file.exists(filename)) {
