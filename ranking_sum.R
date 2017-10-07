@@ -15,8 +15,21 @@ results_20170612 <- read.csv2(file = "results/20170612_Первенство_РБ
 results_20170613 <- read.csv2(file = "results/20170613_Первенство_РБ_классическая_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
 results_20170617 <- read.csv2(file = "results/20170617_Кубок_Шклова_средняя_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
 results_20170618 <- read.csv2(file = "results/20170618_Кубок_Шклова_классическая_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+results_20170909 <- read.csv2(file = "results/20170909_Мемориал_Машерова_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+results_20170910 <- read.csv2(file = "results/20170910_Мемориал_Машерова_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
 
-comp_dates <- c("_20170401", "_20170402", "_20170423", "_20170424", "_20170508", "_20170509", "_20170612", "_20170613", "_20170617", "_20170618")
+comp_dates <- c("20170401",
+                "20170402",
+                "20170423",
+                "20170424",
+                "20170508",
+                "20170509",
+                "20170612",
+                "20170613",
+                "20170617",
+                "20170618",
+                "20170909",
+                "20170910")
 
 all_rows_results <- rbind(results_20170401,
                           results_20170402,
@@ -27,7 +40,10 @@ all_rows_results <- rbind(results_20170401,
                           results_20170612,
                           results_20170613,
                           results_20170617,
-                          results_20170618)
+                          results_20170618,
+                          results_20170618,
+                          results_20170909,
+                          results_20170910)
 whom_to_add <- anti_join(all_rows_results, reference_database, by = c("ФИ", "ГР"))
 whom_to_add <- filter(whom_to_add, !duplicated(whom_to_add[, c("ФИ", "ГР")]))
 write.csv2(x = select(whom_to_add, ФИ, Коллектив, Квал, ГР, Группа), file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
@@ -46,6 +62,8 @@ results_20170612 <- select(results_20170612, ФИ, ГР, Очки_20170612 = О�
 results_20170613 <- select(results_20170613, ФИ, ГР, Очки_20170613 = Очки)
 results_20170617 <- select(results_20170617, ФИ, ГР, Очки_20170617 = Очки)
 results_20170618 <- select(results_20170618, ФИ, ГР, Очки_20170618 = Очки)
+results_20170909 <- select(results_20170909, ФИ, ГР, Очки_20170909 = Очки)
+results_20170910 <- select(results_20170910, ФИ, ГР, Очки_20170910 = Очки)
 
 results <- full_join(x = results_20170401, results_20170402, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
 results <- full_join(x = results, y = results_20170423, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
@@ -56,7 +74,8 @@ results <- full_join(x = results, y = results_20170612, by = c("ФИ" = "ФИ", 
 results <- full_join(x = results, y = results_20170613, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
 results <- full_join(x = results, y = results_20170617, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
 results <- full_join(x = results, y = results_20170618, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-
+results <- full_join(x = results, y = results_20170909, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
+results <- full_join(x = results, y = results_20170910, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
 
 # Теперь можно считать сумму
 results$Сумма <- apply(X = select(results, starts_with("Очки")),
@@ -74,7 +93,7 @@ sum <- left_join(reference_database, results, by = c("ФИ", "ГР"))
 sum <- sum[order(sum$Группа, -sum$Сумма), ]
 
 library(xlsx) #load the package
-filename = paste0("results/ranking_sum_by_date", last(comp_dates), ".xlsx")
+filename = paste0("results/ranking_sum_by_date_", last(comp_dates), ".xlsx")
 
 for(i in sort(unique(sum$Группа))) {
   if(!file.exists(filename)) {
