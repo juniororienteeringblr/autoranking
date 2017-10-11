@@ -1,5 +1,4 @@
-ranking_scores <- function(competition_date = NA) {
-  require(googlesheets)
+ranking_scores <- function(competition_date = NA, results_source = c("googlesheets", "local")) {
   
   # Шапка файлов результатов должна быть следующей
   # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа
@@ -11,28 +10,36 @@ ranking_scores <- function(competition_date = NA) {
   
   print(paste("Считаем рейтинг для даты:", competition_date))
   
-  # Читаем список всех доступных файлов
-  # возможно, попросит аутентификации в браузере!
-  my_sheets <- gs_ls()
-  
-  # Ищем тот документ, который соответствует дате
-  results_sheet_name <- my_sheets$sheet_title[grepl(pattern = paste0("^", competition_date), x = my_sheets$sheet_title)]
-  
-  results_sheet <- gs_title(results_sheet_name)
-  
-  # list worksheets (not necessary here as we have only one sheet for every results file)
-  gs_ws_ls(results_sheet)
-  
-  # Читаем файл результатов
-  results <- as.data.frame(gs_read(results_sheet))
-  
-  # Or do it all locally
-  # results_filename <- file.choose()
-  # 
-  # results <- read.csv2(results_filename, encoding = "UTF-8",
-  #                      colClasses = c("character", "character", "character", "integer",
-  #                                     "integer", "character", "character", "character",
-  #                                     "character", "character"))
+  if(results_source == "googlesheets") {
+    require(googlesheets)
+    
+    # Читаем список всех доступных файлов
+    # возможно, попросит аутентификации в браузере!
+    my_sheets <- gs_ls()
+    
+    # Ищем тот документ, который соответствует дате
+    results_sheet_name <- my_sheets$sheet_title[grepl(pattern = paste0("^", competition_date), x = my_sheets$sheet_title)]
+    
+    results_sheet <- gs_title(results_sheet_name)
+    
+    # list worksheets (not necessary here as we have only one sheet for every results file)
+    gs_ws_ls(results_sheet)
+    
+    # Читаем файл результатов
+    results <- as.data.frame(gs_read(results_sheet))
+  } else {
+    if(results_source == "local") {
+      # Or do it all locally
+      results_filename <- file.choose()
+
+      results <- read.csv2(results_filename, encoding = "UTF-8",
+                           colClasses = c("character", "character", "character", "integer",
+                                          "integer", "character", "character", "character",
+                                          "character"))
+    } else {
+      stop("Unsupported results source!")
+    }
+  }
   
   library(stringi)
   library(stringr)
