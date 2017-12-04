@@ -2,68 +2,83 @@
 library(dplyr)
 library(googlesheets)
 
+results_source = "googlesheets"
+ranking_type = "junior"
+
+coefs_comps <- data.frame()
+
+if(results_source == "googlesheets") {
+  # Возможно, попросит аутентификации в браузере!
+  require(googlesheets)
+  
+  if(ranking_type == "youth") {
+    coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts")))
+  } else {
+    if(ranking_type == "junior") {
+      coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts")))
+    } else {
+      stop("Unsupported rating type!")
+    }
+  }
+} else {
+  if(results_source == "local") {
+    # Or do it all locally
+    if(ranking_type == "youth") {
+      print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для юношеского рейтинга.")
+      coefs_comps_filename <- file.choose()
+      coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
+                               colClasses = c(rep("character", 4), "double"))
+    } else {
+      if(ranking_type == "junior") {
+        print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для юниорского рейтинга.")
+        coefs_comps_filename <- file.choose()
+        coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
+                                 colClasses = c(rep("character", 4), "double"))
+      } else {
+        stop("Unsupported rating type!")
+      }
+    }
+  } else {
+    stop("Unsupported results source!")
+  }
+}
+
 reference_database <- as.data.frame(gs_read(gs_title("Youth and Juniors database")))
 # reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
 
-results_20170401 <- read.csv2(file = "results/20170401_Брестский подснежник_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170402 <- read.csv2(file = "results/20170402_Брестский подснежник_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170423 <- read.csv2(file = "results/20170423_Открытый Кубок Гродно_средняя_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170424 <- read.csv2(file = "results/20170424_Открытый Кубок Гродно_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170508 <- read.csv2(file = "results/20170508_Командный чемпионат РБ_средняя_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170509 <- read.csv2(file = "results/20170509_Командный чемпионат РБ_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170612 <- read.csv2(file = "results/20170612_Юношеское первенство РБ_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170613 <- read.csv2(file = "results/20170613_Юношеское первенство РБ_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170617 <- read.csv2(file = "results/20170617_Открытый Кубок Шклова_средняя_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170618 <- read.csv2(file = "results/20170618_Открытый Кубок Шклова_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170909 <- read.csv2(file = "results/20170909_Мемориал Машерова_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170910 <- read.csv2(file = "results/20170910_Мемориал Машерова_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170916 <- read.csv2(file = "results/20170916_Чемпионат Минской области_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170917 <- read.csv2(file = "results/20170917_Чемпионат Минской области_средняя_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170923 <- read.csv2(file = "results/20170923_Кубок ДЮК_средняя_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170924 <- read.csv2(file = "results/20170924_Кубок ДЮК_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20170930 <- read.csv2(file = "results/20170930_Золотая осень_классика_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-results_20171001 <- read.csv2(file = "results/20171001_Золотая осень_спринт_очки_рейтинг.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+result_list <- list() #create an empty list
 
+# Читаем список всех доступных файлов
+# возможно, попросит аутентификации в браузере!
+# my_sheets <- gs_ls()
+for (i in 1:nrow(coefs_comps)) {
+  # Ищем тот документ, который соответствует дате
+  # results_sheet_name <- my_sheets$sheet_title[grepl(pattern = paste0("^", coefs_comps$Дата[i]), x = my_sheets$sheet_title)]
+  # results_sheet <- gs_title(results_sheet_name)
+  # print(results_sheet)
+  # Читаем файл результатов
+  # result_list[[i]] <- as.data.frame(gs_read(results_sheet))
+  # 
+  # result_list[[i]] <- read.csv2(file = file.path(getwd(), "results", list.files(file.path(getwd(), "results"),
+  #                                                 pattern = paste0("^", coefs_comps$Дата[i],
+  #                                                                  ".*", "очки_рейтинг\\.csv"))),
+  #                               encoding = "UTF-8", stringsAsFactors = FALSE)
+  # возможно, попросит аутентификации в браузере!
+  my_sheets <- gs_ls()
+  
+  # Ищем тот документ, который соответствует дате
+  results_filename <- paste0(coefs_comps$Дата[i], "_", coefs_comps$Название[i], "_", coefs_comps$Вид[i])
+  
+  print(results_filename)
+  
+  results_sheet <- gs_title(results_filename)
+  
+  # Читаем файл результатов
+  result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = "scores_junior_ranking"))
+}
+all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
-comp_dates <- c("20170401",
-                "20170402",
-                "20170423",
-                "20170424",
-                "20170508",
-                "20170509",
-                "20170612",
-                "20170613",
-                "20170617",
-                "20170618",
-                "20170909",
-                "20170910",
-                "20170916",
-                "20170917",
-                "20170923",
-                "20170924",
-                "20170930",
-                "20171001")
-
-all_rows_results <- rbind(results_20170401,
-                          results_20170402,
-                          results_20170423,
-                          results_20170424,
-                          results_20170508,
-                          results_20170509,
-                          results_20170612,
-                          results_20170613,
-                          results_20170617,
-                          results_20170618,
-                          results_20170618,
-                          results_20170909,
-                          results_20170910,
-                          results_20170916,
-                          results_20170917,
-                          results_20170923,
-                          results_20170924,
-                          results_20170930,
-                          results_20171001)
-whom_to_add <- anti_join(all_rows_results, reference_database, by = c("ФИ", "ГР"))
+whom_to_add <- anti_join(all_comps_results, reference_database, by = c("ФИ", "ГР"))
 whom_to_add <- filter(whom_to_add, !duplicated(whom_to_add[, c("ФИ", "ГР")]))
 write.csv2(x = select(whom_to_add, ФИ, Коллектив, Квал, ГР, Группа), file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
@@ -71,60 +86,34 @@ print("ВНИМАНИЕ! Проверить, не нужно ли добавит
 
 # Добавляем, перечитываем базу, проверяем, всех ли добавили
 
-results_20170401 <- select(results_20170401, ФИ, ГР, Очки_20170401 = Очки)
-results_20170402 <- select(results_20170402, ФИ, ГР, Очки_20170402 = Очки)
-results_20170423 <- select(results_20170423, ФИ, ГР, Очки_20170423 = Очки)
-results_20170424 <- select(results_20170424, ФИ, ГР, Очки_20170424 = Очки)
-results_20170508 <- select(results_20170508, ФИ, ГР, Очки_20170508 = Очки)
-results_20170509 <- select(results_20170509, ФИ, ГР, Очки_20170509 = Очки)
-results_20170612 <- select(results_20170612, ФИ, ГР, Очки_20170612 = Очки)
-results_20170613 <- select(results_20170613, ФИ, ГР, Очки_20170613 = Очки)
-results_20170617 <- select(results_20170617, ФИ, ГР, Очки_20170617 = Очки)
-results_20170618 <- select(results_20170618, ФИ, ГР, Очки_20170618 = Очки)
-results_20170909 <- select(results_20170909, ФИ, ГР, Очки_20170909 = Очки)
-results_20170910 <- select(results_20170910, ФИ, ГР, Очки_20170910 = Очки)
-results_20170916 <- select(results_20170916, ФИ, ГР, Очки_20170916 = Очки)
-results_20170917 <- select(results_20170917, ФИ, ГР, Очки_20170917 = Очки)
-results_20170923 <- select(results_20170923, ФИ, ГР, Очки_20170923 = Очки)
-results_20170924 <- select(results_20170924, ФИ, ГР, Очки_20170924 = Очки)
-results_20170930 <- select(results_20170930, ФИ, ГР, Очки_20170930 = Очки)
-results_20171001 <- select(results_20171001, ФИ, ГР, Очки_20171001 = Очки)
+for(i in 1:nrow(coefs_comps)) {
+  result_list[[i]] <- result_list[[i]] %>% select(ФИ, ГР, Очки)
+  names(result_list[[i]])[names(result_list[[i]]) == 'Очки'] <- paste0("Очки_", coefs_comps$Дата[i])
+}
 
-results <- full_join(x = results_20170401, results_20170402, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170423, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170424, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170508, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170509, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170612, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170613, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170617, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170618, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170909, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170910, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170916, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170917, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170923, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170924, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20170930, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
-results <- full_join(x = results, y = results_20171001, by = c("ФИ" = "ФИ", "ГР" = "ГР"))
+results_sum <- data.frame(ФИ = character(), ГР = integer())
+
+for(i in 1:nrow(coefs_comps)) {
+  results_sum <- full_join(x = results_sum, result_list[[i]], by = c("ФИ" = "ФИ", "ГР" = "ГР"))
+}
 
 # Теперь можно считать сумму
-results$Сумма <- apply(X = select(results, starts_with("Очки")),
-                       MARGIN = 1,
-                       FUN = function(x) {sum(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE)})
+results_sum$Сумма <- apply(X = select(results_sum, starts_with("Очки")),
+                           MARGIN = 1,
+                           FUN = function(x) {sum(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE)})
 
-results$Среднее <- apply(X = select(results, starts_with("Очки")),
-                       MARGIN = 1,
-                       FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE))})
+results_sum$Среднее <- apply(X = select(results_sum, starts_with("Очки")),
+                             MARGIN = 1,
+                             FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE))})
 
 
-sum <- left_join(reference_database, results, by = c("ФИ", "ГР"))
+sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))
 
 # Сортируем
 sum <- sum[order(sum$Группа, -sum$Сумма), ]
 
 library(xlsx) #load the package
-filename = paste0("results/ranking_sum_by_date_", last(comp_dates), ".xlsx")
+filename = paste0("results/ranking_sum_by_date_", last(coefs_comps$Дата), ".xlsx")
 
 for(i in sort(unique(sum$Группа))) {
   if(!file.exists(filename)) {
