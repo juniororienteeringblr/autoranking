@@ -3,7 +3,7 @@ library(dplyr)
 library(googlesheets)
 
 results_source = "googlesheets"
-ranking_type = "junior"
+ranking_type = "youth"
 
 coefs_comps <- data.frame()
 
@@ -12,10 +12,10 @@ if(results_source == "googlesheets") {
   require(googlesheets)
   
   if(ranking_type == "youth") {
-    coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts")))
+    coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
   } else {
     if(ranking_type == "junior") {
-      coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts")))
+      coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
     } else {
       stop("Unsupported rating type!")
     }
@@ -43,7 +43,7 @@ if(results_source == "googlesheets") {
   }
 }
 
-reference_database <- as.data.frame(gs_read(gs_title("Youth and Juniors database")))
+reference_database <- as.data.frame(gs_read(gs_title("Youth and Juniors database"), ws = format(Sys.Date(), "%Y")))
 # reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
 
 result_list <- list() #create an empty list
@@ -51,7 +51,10 @@ result_list <- list() #create an empty list
 # Читаем список всех доступных файлов
 # возможно, попросит аутентификации в браузере!
 # my_sheets <- gs_ls()
-for (i in 1:nrow(coefs_comps)) {
+
+passed_comps <- coefs_comps[as.integer(coefs_comps$Дата) < as.integer("20180515") & !is.na(coefs_comps$Дата), ]
+
+for (i in 1:nrow(passed_comps)) {
   # Ищем тот документ, который соответствует дате
   # results_sheet_name <- my_sheets$sheet_title[grepl(pattern = paste0("^", coefs_comps$Дата[i]), x = my_sheets$sheet_title)]
   # results_sheet <- gs_title(results_sheet_name)
@@ -67,33 +70,35 @@ for (i in 1:nrow(coefs_comps)) {
   my_sheets <- gs_ls()
   
   # Ищем тот документ, который соответствует дате
-  results_filename <- paste0(coefs_comps$Дата[i], "_", coefs_comps$Название[i], "_", coefs_comps$Вид[i])
+  results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
   
   print(results_filename)
   
   results_sheet <- gs_title(results_filename)
   
   # Читаем файл результатов
-  result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = "scores_junior_ranking"))
+  result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = paste0("scores_", ranking_type, "_ranking")))
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
 whom_to_add <- anti_join(all_comps_results, reference_database, by = c("ФИ", "ГР"))
 whom_to_add <- filter(whom_to_add, !duplicated(whom_to_add[, c("ФИ", "ГР")]))
-write.csv2(x = select(whom_to_add, ФИ, Коллектив, Квал, ГР, Группа), file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
+whom_to_add <- filter(whom_to_add, !grepl("(Ukr)|(Rus)|(RUS)|(rus)$", whom_to_add[, c("ФИ")]))
+whom_to_add <- filter(whom_to_add, !grepl("(Rus)|(RUS)|(rus)$", whom_to_add[, c("Коллектив")]))
+write.csv2(x = whom_to_add[ , c("ФИ", "Коллектив", "Квал", "ГР", "Группа")], file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 print("ВНИМАНИЕ! Проверить, не нужно ли добавить участников в общую базу!")
 
 # Добавляем, перечитываем базу, проверяем, всех ли добавили
 
-for(i in 1:nrow(coefs_comps)) {
-  result_list[[i]] <- result_list[[i]] %>% select(ФИ, ГР, Очки)
-  names(result_list[[i]])[names(result_list[[i]]) == 'Очки'] <- paste0("Очки_", coefs_comps$Дата[i])
+for(i in 1:nrow(passed_comps)) {
+  result_list[[i]] <- result_list[[i]][, c("ФИ", "ГР", "Очки")]
+  names(result_list[[i]])[names(result_list[[i]]) == 'Очки'] <- paste0("Очки_", passed_comps$Дата[i])
 }
 
 results_sum <- data.frame(ФИ = character(), ГР = integer())
 
-for(i in 1:nrow(coefs_comps)) {
+for(i in 1:nrow(passed_comps)) {
   results_sum <- full_join(x = results_sum, result_list[[i]], by = c("ФИ" = "ФИ", "ГР" = "ГР"))
 }
 
@@ -113,7 +118,7 @@ sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))
 sum <- sum[order(sum$Группа, -sum$Сумма), ]
 
 library(xlsx) #load the package
-filename = paste0("results/ranking_sum_by_date_", last(coefs_comps$Дата), ".xlsx")
+filename = paste0("ranking_sum_by_date_", last(passed_comps$Дата), ".xlsx")
 
 for(i in sort(unique(sum$Группа))) {
   if(!file.exists(filename)) {

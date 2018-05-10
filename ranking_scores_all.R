@@ -1,4 +1,4 @@
-source("ranking_scores.R")
+source("ranking_scores.R", encoding = "UTF-8")
 
 results_source = "googlesheets"
 ranking_type = "junior"
@@ -10,11 +10,11 @@ if(results_source == "googlesheets") {
   require(googlesheets)
   
   if(ranking_type == "youth") {
-    coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts")))
+    coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
     coefs_comps$Дата <- as.character(coefs_comps$Дата)
   } else {
     if(ranking_type == "junior") {
-      coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts")))
+      coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Junior Ranking Starts"))))
       coefs_comps$Дата <- as.character(coefs_comps$Дата)
     } else {
       stop("Unsupported rating type!")
@@ -43,7 +43,9 @@ if(results_source == "googlesheets") {
   }
 }
 
-apply(X = coefs_comps, MARGIN = 1, FUN = function(x) {
+passed_comps <- coefs_comps[as.integer(coefs_comps$Дата) < as.integer("20180515") & !is.na(coefs_comps$Дата), ]
+
+apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
   ranking_scores(results_source = results_source,
                  competition_date = x["Дата"],
                  competition_name = x["Название"],
