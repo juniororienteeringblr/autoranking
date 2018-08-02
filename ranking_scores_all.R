@@ -1,3 +1,5 @@
+Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
+
 source("ranking_scores.R", encoding = "UTF-8")
 
 results_source = "googlesheets"
@@ -43,7 +45,7 @@ if(results_source == "googlesheets") {
   }
 }
 
-passed_comps <- coefs_comps[as.integer(coefs_comps$Дата) < as.integer("20180515") & !is.na(coefs_comps$Дата), ]
+passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
 apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
   ranking_scores(results_source = results_source,
