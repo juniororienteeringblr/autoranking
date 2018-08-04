@@ -1,9 +1,10 @@
+Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
 
 library(dplyr)
 library(googlesheets)
 
 results_source = "googlesheets"
-ranking_type = "youth"
+ranking_type = "junior"
 
 coefs_comps <- data.frame()
 
@@ -15,7 +16,7 @@ if(results_source == "googlesheets") {
     coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
   } else {
     if(ranking_type == "junior") {
-      coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
+      coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Junior Ranking Starts"))))
     } else {
       stop("Unsupported rating type!")
     }
@@ -52,7 +53,7 @@ result_list <- list() #create an empty list
 # возможно, попросит аутентификации в браузере!
 # my_sheets <- gs_ls()
 
-passed_comps <- coefs_comps[as.integer(coefs_comps$Дата) < as.integer("20180515") & !is.na(coefs_comps$Дата), ]
+passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
 for (i in 1:nrow(passed_comps)) {
   # Ищем тот документ, который соответствует дате
