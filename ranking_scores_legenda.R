@@ -1,6 +1,6 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
-date_string <- "20180831"
+date_string <- "20180601"
 
 results_filename <- paste0("C:/Studies/autoranking/for_legenda/", date_string, "r.csv")
 
@@ -55,6 +55,8 @@ write.csv(results_towrite,
 # Поревьюить и поправить, если нужно, результаты для награждения!!!
 
 results_for_team <- read.csv(file = paste0("C:/Studies/autoranking/for_legenda/", date_string, "r_для_награждения.csv"))
+
+results_for_team <- filter(results_for_team, ! (`Возрастная_группа` %in% c("Ж21", "М21")))
 
 sum_by_team <- results_for_team %>%
   group_by(`Коллектив`) %>% top_n(10, `Очки`) %>%
