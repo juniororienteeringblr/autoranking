@@ -29,6 +29,7 @@ results <- left_join(results, coefs_group, by = c("Сложность" = "Сло
 results$`Скорость` <- (as.numeric(results$`Длина`)/1000)/(results$`Результат_сек`/3600)
 
 results <- mutate(results, `Очки` = round(`Коэффициент`*`Скорость`/6.5))
+results$Очки[results$Место == 0] <- 0
 
 # Вычисляем правильную возрастную группу для человека
 
@@ -43,13 +44,33 @@ results$`Возрастная_группа` <- paste0(substr(results$`Групп
                                                                     ifelse(results$`Возраст` > 10, "12",
                                                                            ifelse(results$`Возраст` > 8, "10", "8"))))))))
 
-results_towrite <- results[, c("ФИ", "Возрастная_группа", "ГР", "Результат", "Место", "Группа", "Очки", "Коллектив")]
+# Сортируем
+results <- results[order(results$Возрастная_группа, -results$Очки), ]
+
+results <- results %>%
+  group_by(`Возрастная_группа`) %>%
+  mutate(`Место_возр` = floor(rank(-`Очки`)))
+results$`Место_возр`[is.na(results$Место)] <- NA
+results$`Место_возр`[results$Место == 0] <- NA
+
+score_place <- read.csv2(file = "C:/Studies/autoranking/for_legenda/scores_legenda.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
+                         colClasses = c("integer", "integer"))
+
+results <- left_join(results, score_place, by = c("Место_возр" = "Место"))
+
+results$`Очки_команда`[results$`Возраст` > 20] = NA
+
+results_towrite <- results[, c("ФИ", "ГР", "Группа", "Результат", "Место",
+                               "Очки", "Возрастная_группа", "Место_возр",
+                               "Коллектив", "Очки_команда")]
 
 # Сортируем
-results_towrite <- results_towrite[order(results_towrite$Возрастная_группа, -results_towrite$Очки), ]
+results_towrite <- results_towrite[order(results_towrite$Возрастная_группа, results_towrite$Место_возр), ]
 
 write.csv(results_towrite,
-          file = paste0("C:/Studies/autoranking/for_legenda/", date_string, "r_для_награждения.csv"),
+          file = paste0("C:/Studies/autoranking/for_legenda/",
+                        date_string, "r_для_награждения.csv"),
+          na = "",
           row.names = FALSE)
 
 # Поревьюить и поправить, если нужно, результаты для награждения!!!
@@ -59,8 +80,8 @@ results_for_team <- read.csv(file = paste0("C:/Studies/autoranking/for_legenda/"
 results_for_team <- filter(results_for_team, ! (`Возрастная_группа` %in% c("Ж21", "М21")))
 
 sum_by_team <- results_for_team %>%
-  group_by(`Коллектив`) %>% top_n(10, `Очки`) %>%
-  group_by(`Коллектив`) %>% summarise(`Сумма_очков_коллектив` = sum(`Очки`))
+  group_by(`Коллектив`) %>% top_n(10, `Очки_команда`) %>%
+  group_by(`Коллектив`) %>% summarise(`Сумма_очков_коллектив` = sum(`Очки_команда`))
 
 # Сортируем
 sum_by_team <- sum_by_team[order(-sum_by_team$`Сумма_очков_коллектив`), ]
