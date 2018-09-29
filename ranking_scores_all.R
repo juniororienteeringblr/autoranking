@@ -1,4 +1,7 @@
-Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
+# For Linux
+# Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
+# For Windows
+Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 source("ranking_scores.R", encoding = "UTF-8")
 
