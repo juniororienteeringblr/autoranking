@@ -67,6 +67,10 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   results$`ФИ` <- str_to_title(results$`ФИ`)
   results$`ФИ` <- str_replace_all(results$`ФИ`, c("ё" = "е", "Ё" = "Е"))
   
+  # Убираем иностранных спортсменов
+  results <- results[!grepl("(Ukr)|(Rus)|(RUS)|(rus)|(Mda)|(Lat)|(Est)|(EST)$", results$`ФИ`), ]
+  results <- results[!grepl("(Rus)|(RUS)|(rus)|(EST)$", results$`Коллектив`), ]
+  
   # У сошедших в графе "место" стоит 0, у участников в/к - "в/к"
   results$`Место`[results$`Место` == "в/к"] <- "0"
   results$`Место` <- as.numeric(results$`Место`)

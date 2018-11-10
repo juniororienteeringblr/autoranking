@@ -84,8 +84,6 @@ all_comps_results <- do.call("rbind",result_list) #combine all vectors into a ma
 
 whom_to_add <- anti_join(all_comps_results, reference_database, by = c("ФИ", "ГР"))
 whom_to_add <- filter(whom_to_add, !duplicated(whom_to_add[, c("ФИ", "ГР")]))
-whom_to_add <- filter(whom_to_add, !grepl("(Ukr)|(Rus)|(RUS)|(rus)|(Mda)|(Lat)$", whom_to_add[, c("ФИ")]))
-whom_to_add <- filter(whom_to_add, !grepl("(Rus)|(RUS)|(rus)$", whom_to_add[, c("Коллектив")]))
 write.csv2(x = whom_to_add[ , c("ФИ", "Коллектив", "Квал", "ГР", "Группа")], file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 print("ВНИМАНИЕ! Проверить, не нужно ли добавить участников в общую базу!")
