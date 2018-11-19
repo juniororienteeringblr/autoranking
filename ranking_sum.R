@@ -1,10 +1,13 @@
-Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
+# For Linux
+# Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
+# For Windows
+Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 library(dplyr)
 library(googlesheets)
 
 results_source = "googlesheets"
-ranking_type = "junior"
+ranking_type = "youth"
 
 coefs_comps <- data.frame()
 
@@ -116,6 +119,16 @@ sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))
 # Сортируем
 sum <- sum[order(sum$Группа, -sum$Сумма), ]
 
+# Переименовываем колонки с очками так, как больше нравится Диме Давидовичу
+colnames(sum)[grep("Очки_\\d{8}", colnames(sum))] <- format(strptime(substring(colnames(sum)[grep("Очки_\\d{8}", colnames(sum))], 10, 14), format = "%m%d"), format = "%d.%m")
+
+# Убираем неподходящие группы
+if (ranking_type == "youth") {
+  sum = filter(sum, Группа %in% c("Ж12", "М12", "Ж14", "М14", "Ж16", "М16", "Ж18", "М18"))
+} else if (ranking_type == "junior") {
+  sum = filter(sum, Группа %in% c("Ж20", "М20"))
+}
+
 library(xlsx) #load the package
 filename = paste0(ranking_type, "_ranking_sum_by_date_", last(passed_comps$Дата), ".xlsx")
 
@@ -123,11 +136,19 @@ for(i in sort(unique(sum$Группа))) {
   if(!file.exists(filename)) {
     x = filter(sum, Группа == i)
     x = cbind(`№` = 1:nrow(x), x, Место = 1:nrow(x))
+    x$`Коллектив` <- NULL
+    x$`Квал` <- NULL
+    x$`Группа` <- NULL
+    x <- x[! is.na(x$`Сумма`), ]
     write.xlsx(x, file = filename,
                sheetName = i, row.names = FALSE, showNA = FALSE)
   } else {
     x = filter(sum, Группа == i)
     x = cbind(`№` = 1:nrow(x), x, Место = 1:nrow(x))
+    x$`Коллектив` <- NULL
+    x$`Квал` <- NULL
+    x$`Группа` <- NULL
+    x <- x[! is.na(x$`Сумма`), ]
     write.xlsx(x, file = filename, append = TRUE,
                sheetName = i, row.names = FALSE, showNA = FALSE)
   }
