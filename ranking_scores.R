@@ -103,32 +103,29 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   if(ranking_type == "youth") {
     results <- results[as.integer(format(Sys.Date(), "%Y")) - results$`ГР` <= 18, ]
     print("selected")
-    # if(results_source == "googlesheets") {
-    #   print("gs yes")
-    #   if("scores_youth_ranking" %in% gs_ws_ls(results_sheet)) {
-    #     print("ls found")
-    #     results_sheet <- results_sheet %>%
-    #       gs_ws_delete(ws = "scores_youth_ranking", verbose = FALSE)
-    #     print("ls deleted")
-    #   }
-    #   print("ready")
-    #   results_sheet <- results_sheet %>%
-    #     gs_ws_new(ws_title = "scores_youth_ranking", input = results, verbose = TRUE)
-    #   print("done")
-    # } else {
-    #   if(results_source == "local") {
-    #     # Or do it all locally
-    #     results_score_filename <- paste0(str_replace(pattern = "\\.csv", string = results_filename, replacement = ""),
-    #                                      "_scores_youth_ranking.csv")
-    #     write.csv2(x = results, file = results_score_filename, row.names = FALSE, fileEncoding = "UTF-8")
-    #   } else {
-    #     stop("Unsupported results source!")
-    #   }
-    # }
-    
-    results_score_filename <- paste0(str_replace(pattern = "\\.csv", string = results_filename, replacement = ""),
-                                     "_scores_youth_ranking.csv")
-    write.csv2(x = results, file = results_score_filename, row.names = FALSE, fileEncoding = "UTF-8")
+    if(results_source == "googlesheets") {
+      print("gs yes")
+      if("scores_youth_ranking" %in% gs_ws_ls(results_sheet)) {
+        print("ls found")
+        results_sheet <- results_sheet %>%
+          gs_ws_delete(ws = "scores_youth_ranking", verbose = FALSE)
+        print("ls deleted")
+      }
+      print("ready")
+      results_sheet <- results_sheet %>%
+        gs_ws_new(ws_title = "scores_youth_ranking", input = results, verbose = TRUE)
+      print("done")
+    } else {
+      if(results_source == "local") {
+        # Or do it all locally
+        results_score_filename <- paste0(str_replace(pattern = "\\.csv", string = results_filename, replacement = ""),
+                                         "_scores_youth_ranking.csv")
+        write.csv2(x = results, file = file.path(getwd(), "results", results_score_filename),
+                   row.names = FALSE, fileEncoding = "UTF-8")
+      } else {
+        stop("Unsupported results source!")
+      }
+    }
     
   } else {
     if(ranking_type == "junior") {

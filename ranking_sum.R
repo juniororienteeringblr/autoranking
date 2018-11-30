@@ -6,7 +6,7 @@ Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 library(dplyr)
 library(googlesheets)
 
-results_source = "googlesheets"
+results_source = "local"
 ranking_type = "youth"
 
 coefs_comps <- data.frame()
@@ -14,6 +14,11 @@ coefs_comps <- data.frame()
 if(results_source == "googlesheets") {
   # Возможно, попросит аутентификации в браузере!
   require(googlesheets)
+  
+  # Читаем список всех доступных файлов для будущего использования
+  my_sheets <- gs_ls()
+  
+  reference_database <- as.data.frame(gs_read(gs_title("Youth and Juniors database"), ws = format(Sys.Date(), "%Y")))
   
   if(ranking_type == "youth") {
     coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
@@ -27,6 +32,8 @@ if(results_source == "googlesheets") {
 } else {
   if(results_source == "local") {
     # Or do it all locally
+    reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+    
     if(ranking_type == "youth") {
       print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для юношеского рейтинга.")
       coefs_comps_filename <- file.choose()
@@ -47,41 +54,29 @@ if(results_source == "googlesheets") {
   }
 }
 
-reference_database <- as.data.frame(gs_read(gs_title("Youth and Juniors database"), ws = format(Sys.Date(), "%Y")))
-# reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-
 result_list <- list() #create an empty list
-
-# Читаем список всех доступных файлов
-# возможно, попросит аутентификации в браузере!
-# my_sheets <- gs_ls()
 
 passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
 for (i in 1:nrow(passed_comps)) {
-  # Ищем тот документ, который соответствует дате
-  # results_sheet_name <- my_sheets$sheet_title[grepl(pattern = paste0("^", coefs_comps$Дата[i]), x = my_sheets$sheet_title)]
-  # results_sheet <- gs_title(results_sheet_name)
-  # print(results_sheet)
-  # Читаем файл результатов
-  # result_list[[i]] <- as.data.frame(gs_read(results_sheet))
-  # 
-  # result_list[[i]] <- read.csv2(file = file.path(getwd(), "results", list.files(file.path(getwd(), "results"),
-  #                                                 pattern = paste0("^", coefs_comps$Дата[i],
-  #                                                                  ".*", "очки_рейтинг\\.csv"))),
-  #                               encoding = "UTF-8", stringsAsFactors = FALSE)
-  # возможно, попросит аутентификации в браузере!
-  my_sheets <- gs_ls()
-  
-  # Ищем тот документ, который соответствует дате
-  results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
-  
-  print(results_filename)
-  
-  results_sheet <- gs_title(results_filename)
-  
-  # Читаем файл результатов
-  result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = paste0("scores_", ranking_type, "_ranking")))
+  if(results_source == "googlesheets") {
+    # Ищем тот документ, который соответствует дате
+    results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
+    print(results_filename)
+    results_sheet <- gs_title(results_filename)
+    print(results_sheet)
+    # Читаем файл результатов
+    result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = paste0("scores_", ranking_type, "_ranking")))
+  } else {
+    if(results_source == "local") {
+      result_list[[i]] <- read.csv2(file = file.path(getwd(), list.files(file.path(getwd()),
+                                                                         pattern = paste0("^", coefs_comps$Дата[i],
+                                                                                          ".*", ranking_type, "_ranking\\.csv"))),
+                                    encoding = "UTF-8", stringsAsFactors = FALSE)
+    } else {
+      stop("Unsupported results source!")
+    }
+  }
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
