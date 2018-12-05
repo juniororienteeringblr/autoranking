@@ -99,6 +99,11 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   results$`Очки`[is.na(results$`Очки`)] <- 0
   results$`Очки`[results$`Место` == 0] <- 0
   
+  require(stringi)
+  names(results) <- stri_encode(names(results), "", "UTF-8")
+  
+  results <- as.data.frame(results)
+  
   # Выбираем только людей подходящих групп по возрасту
   if(ranking_type == "youth") {
     results <- results[as.integer(format(Sys.Date(), "%Y")) - results$`ГР` <= 18, ]
