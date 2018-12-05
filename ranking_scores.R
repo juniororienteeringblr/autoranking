@@ -4,9 +4,6 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
                            competition_distance = NA,
                            ranking_type = c("youth", "junior"),
                            competition_coefficient = NA) {
-  
-  print(typeof(competition_coefficient))
-  
   # Шапка файлов результатов должна быть следующей
   # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа
   
@@ -21,9 +18,7 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   }
   
   print(paste("Computing ranking for date:", competition_date, "and coefficient", competition_coefficient))
-  
-  print(competition_coefficient)
-  
+
   if(results_source == "googlesheets") {
     require(googlesheets)
     
@@ -32,10 +27,6 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
     my_sheets <- gs_ls()
     
     # Ищем тот документ, который соответствует дате
-    print(competition_date)
-    print(competition_name)
-    print(competition_distance)
-    print(paste0("^", competition_date, "_", competition_name, "_", competition_distance))
     results_filename <- my_sheets$sheet_title[grepl(pattern = paste0("^", competition_date, "_", competition_name, "_", competition_distance),
                                                     x = my_sheets$sheet_title)]
     
@@ -56,7 +47,6 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
                            colClasses = c("character", "character", "character", "integer",
                                           "integer", "character", "character", "character",
                                           "character"))
-      print(dim(results))
     } else {
       stop("Unsupported results source!")
     }
@@ -88,11 +78,6 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   
   results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
   
-  print(competition_coefficient)
-  print(summary(results$`Коэффициент`))
-  print(summary(results$`Время_победителя`))
-  print(summary(results$`Результат_сек`))
-  
   results <- mutate(results, `Очки` = round(competition_coefficient*1000*`Коэффициент`*(2* (`Время_победителя` / `Результат_сек`) - 1)))
   # results$`Очки`[results$`Очки` <= 1] <- 1
   results$`Очки`[results$`Очки` < 1] <- 0
@@ -107,19 +92,13 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   # Выбираем только людей подходящих групп по возрасту
   if(ranking_type == "youth") {
     results <- results[as.integer(format(Sys.Date(), "%Y")) - results$`ГР` <= 18, ]
-    print("selected")
     if(results_source == "googlesheets") {
-      print("gs yes")
       if("scores_youth_ranking" %in% gs_ws_ls(results_sheet)) {
-        print("ls found")
         results_sheet <- results_sheet %>%
           gs_ws_delete(ws = "scores_youth_ranking", verbose = FALSE)
-        print("ls deleted")
       }
-      print("ready")
       results_sheet <- results_sheet %>%
         gs_ws_new(ws_title = "scores_youth_ranking", input = results, verbose = TRUE)
-      print("done")
     } else {
       if(results_source == "local") {
         # Or do it all locally

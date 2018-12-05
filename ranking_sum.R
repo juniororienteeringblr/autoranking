@@ -62,7 +62,6 @@ for (i in 1:nrow(passed_comps)) {
   if(results_source == "googlesheets") {
     # Ищем тот документ, который соответствует дате
     results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
-    print(results_filename)
     results_sheet <- gs_title(results_filename)
     print(results_sheet)
     # Читаем файл результатов
