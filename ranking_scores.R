@@ -73,7 +73,7 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   library(dplyr)
   results <- left_join(results, coefs_group, by = c("Сложность" = "Сложность"))
   
-  winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% summarise(`Время_победителя` = min(`Результат_сек`))
+  winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% filter(!is.na(`Результат_сек`)) %>% summarise(`Время_победителя` = min(`Результат_сек`))
   #TODO: может случиться ситуация, когда лидер по группе бежал в/к, тогда у нас не будет времени победителя - подумать после
   
   results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
