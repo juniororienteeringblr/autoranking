@@ -15,11 +15,11 @@ if(results_source == "googlesheets") {
   require(googlesheets)
   
   if(ranking_type == "youth") {
-    coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Youth Ranking Starts"))))
+    coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts"), ws = format(Sys.Date(), "%Y")))
     coefs_comps$Дата <- as.character(coefs_comps$Дата)
   } else {
     if(ranking_type == "junior") {
-      coefs_comps <- as.data.frame(gs_read(gs_title(paste(format(Sys.Date(), "%Y"), "Junior Ranking Starts"))))
+      coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts"), ws = format(Sys.Date(), "%Y")))
       coefs_comps$Дата <- as.character(coefs_comps$Дата)
     } else {
       stop("Unsupported rating type!")
