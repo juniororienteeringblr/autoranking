@@ -8,6 +8,7 @@ library(googlesheets)
 
 results_source = "local"
 ranking_type = "youth"
+max_amount_of_starts_counted_for_sum = 8
 
 coefs_comps <- data.frame()
 
@@ -101,11 +102,11 @@ for(i in 1:nrow(passed_comps)) {
 # Теперь можно считать сумму
 results_sum$Сумма <- apply(X = select(results_sum, starts_with("Очки")),
                            MARGIN = 1,
-                           FUN = function(x) {sum(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE)})
+                           FUN = function(x) {sum(sort(x, decreasing = TRUE)[1:ifelse(length(x) < max_amount_of_starts_counted_for_sum, length(x), max_amount_of_starts_counted_for_sum)], na.rm = TRUE)})
 
 results_sum$Среднее <- apply(X = select(results_sum, starts_with("Очки")),
                              MARGIN = 1,
-                             FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < 10, length(x), 10)], na.rm = TRUE))})
+                             FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < max_amount_of_starts_counted_for_sum, length(x), max_amount_of_starts_counted_for_sum)], na.rm = TRUE))})
 
 
 sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))
