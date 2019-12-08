@@ -4,9 +4,10 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 source("ranking_scores.R", encoding = "UTF-8")
+source("ranking_scores_master.R", encoding = "UTF-8")
 
 results_source = "googlesheets"
-ranking_type = "junior"
+ranking_type = "master" # Available options: "youth", "junior", "master"
 
 coefs_comps <- data.frame()
 
@@ -22,7 +23,12 @@ if(results_source == "googlesheets") {
       coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts"), ws = format(Sys.Date(), "%Y")))
       coefs_comps$Дата <- as.character(coefs_comps$Дата)
     } else {
-      stop("Unsupported rating type!")
+      if(ranking_type == "master") {
+        coefs_comps <- as.data.frame(gs_read(gs_title("Master Ranking Starts"), ws = format(Sys.Date(), "%Y")))
+        coefs_comps$Дата <- as.character(coefs_comps$Дата)
+      } else {
+        stop("Unsupported rating type!")
+      }
     }
   }
 } else {
@@ -40,7 +46,14 @@ if(results_source == "googlesheets") {
         coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
                                  colClasses = c(rep("character", 4), "double"))
       } else {
-        stop("Unsupported rating type!")
+        if(ranking_type == "master") {
+          print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для ветеранского рейтинга.")
+          coefs_comps_filename <- file.choose()
+          coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
+                                   colClasses = c(rep("character", 4), "double"))
+        } else {
+          stop("Unsupported rating type!")
+        }
       }
     }
   } else {
@@ -50,11 +63,27 @@ if(results_source == "googlesheets") {
 
 passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
-apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
-  ranking_scores(results_source = results_source,
-                 competition_date = x["Дата"],
-                 competition_name = x["Название"],
-                 competition_distance = x["Вид"],
-                 ranking_type = ranking_type,
-                 competition_coefficient = as.numeric(x["Коэффициент"]))
-})
+if ((ranking_type == "youth") | (ranking_type == "junior")) {
+  apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
+    ranking_scores(results_source = results_source,
+                   competition_date = x["Дата"],
+                   competition_name = x["Название"],
+                   competition_distance = x["Вид"],
+                   ranking_type = ranking_type,
+                   competition_coefficient = as.numeric(x["Коэффициент"]))
+  })
+} else {
+  if(ranking_type == "master") {
+    apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
+      ranking_scores_master(results_source = results_source,
+                            competition_date = x["Дата"],
+                            competition_name = x["Название"],
+                            competition_distance = x["Вид"],
+                            ranking_type = ranking_type,
+                            competition_coefficient = as.numeric(x["Коэффициент"]))
+    })
+  }
+  else {
+    stop("Unsupported ranking type!")
+  }
+}
