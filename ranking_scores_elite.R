@@ -1,8 +1,8 @@
-ranking_scores_master <- function(results_source = c("googlesheets", "local"),
+ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
                            competition_date = NA,
                            competition_name = NA,
                            competition_distance = NA,
-                           ranking_type = c("master"),
+                           ranking_type = c("elite"),
                            competition_coefficient = NA) {
   # Шапка файлов результатов должна быть следующей
   # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа
@@ -61,7 +61,7 @@ ranking_scores_master <- function(results_source = c("googlesheets", "local"),
   } else {
     if(results_source == "local") {
       # Or do it all locally
-      reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+      reference_database <- read.csv2(file = "orienteers_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
     } else {
       stop("Unsupported results source!")
     }
@@ -90,7 +90,9 @@ ranking_scores_master <- function(results_source = c("googlesheets", "local"),
   results$`Сложность` <- substr(results$`Группа`, 2, 1000)
   
   # Убираем группы младше 35
-  results <- results %>% filter(`Сложность` >= 35)
+  results <- results %>% filter(`Сложность` == stri_enc_toutf8("21") |
+                                  `Сложность` == stri_enc_toutf8("21E") |
+                                  `Сложность` == stri_enc_toutf8("21Е"))
   # И чтобы не было в/к шников удаляем вообще их результаты
   results <- results %>% filter(`Место` != "0")
   
@@ -109,20 +111,19 @@ ranking_scores_master <- function(results_source = c("googlesheets", "local"),
   
   results <- as.data.frame(results)
   
-  # Выбираем только людей подходящих групп по возрасту
-  results <- results[as.integer(format(Sys.Date(), "%Y")) - results$`ГР` >= 35, ]
+  # Тут не нужно выбирать людей, подходящих по возрасту, подходят все, кто бегал нужные дистанции
   if(results_source == "googlesheets") {
-    if("scores_master_ranking" %in% gs_ws_ls(results_sheet)) {
+    if("scores_elite_ranking" %in% gs_ws_ls(results_sheet)) {
       results_sheet <- results_sheet %>%
-        gs_ws_delete(ws = "scores_master_ranking", verbose = FALSE)
+        gs_ws_delete(ws = "scores_elite_ranking", verbose = FALSE)
     }
     results_sheet <- results_sheet %>%
-      gs_ws_new(ws_title = "scores_master_ranking", input = results, verbose = TRUE)
+      gs_ws_new(ws_title = "scores_elite_ranking", input = results, verbose = TRUE)
   } else {
     if(results_source == "local") {
       # Or do it all locally
       results_score_filename <- paste0(str_replace(pattern = "\\.csv", string = results_filename, replacement = ""),
-                                       "_scores_master_ranking.csv")
+                                       "_scores_elite_ranking.csv")
       write.csv2(x = results, file = file.path(getwd(), "results", results_score_filename),
                  row.names = FALSE, fileEncoding = "UTF-8")
     } else {

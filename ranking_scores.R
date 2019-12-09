@@ -38,7 +38,7 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
     gs_ws_ls(results_sheet)
     
     # Читаем файл результатов
-    results <- as.data.frame(gs_read(ss = results_sheet))
+    results <- as.data.frame(gs_read(ss = results_sheet, ws="results"))
   } else {
     if(results_source == "local") {
       # Or do it all locally
