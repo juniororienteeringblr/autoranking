@@ -89,7 +89,7 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   
   results$`Сложность` <- substr(results$`Группа`, 2, 1000)
   
-  # Убираем группы младше 35
+  # Выбираем только элитные группы
   results <- results %>% filter(`Сложность` == stri_enc_toutf8("21") |
                                   `Сложность` == stri_enc_toutf8("21E") |
                                   `Сложность` == stri_enc_toutf8("21Е"))
@@ -106,7 +106,6 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   results$`Очки`[is.na(results$`Очки`)] <- 0
   results$`Очки`[results$`Место` == 0] <- 0
   
-  require(stringi)
   names(results) <- stri_enc_toutf8(names(results), is_unknown_8bit = FALSE, validate = FALSE)
   
   results <- as.data.frame(results)

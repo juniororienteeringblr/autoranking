@@ -55,7 +55,8 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   library(stringi)
   library(stringr)
   results$`ФИ` <- str_to_title(results$`ФИ`)
-  results$`ФИ` <- str_replace_all(results$`ФИ`, c("ё" = "е", "Ё" = "Е"))
+  results$`ФИ` <- str_replace_all(results$`ФИ`, stri_enc_toutf8("ё"), stri_enc_toutf8("е"))
+  results$`ФИ` <- str_replace_all(results$`ФИ`, stri_enc_toutf8("Ё"), stri_enc_toutf8("Е"))
   
   # Убираем иностранных спортсменов
   results <- results[!grepl("(Ukr)|(Rus)|(RUS)|(rus)|(Mda)|(Lat)|(Est)|(EST)|(UKR)|(ukr)|(HUN)|(hun)|(FIN)|(POL)|(pol)$", results$`ФИ`), ]
@@ -73,9 +74,11 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   library(dplyr)
   results <- left_join(results, coefs_group, by = c("Сложность" = "Сложность"))
   
-  winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% filter(!is.na(`Результат_сек`)) %>% summarise(`Время_победителя` = min(`Результат_сек`))
-  #TODO: может случиться ситуация, когда лидер по группе бежал в/к, тогда у нас не будет времени победителя - подумать после
+  # И чтобы не было в/к шников удаляем вообще их результаты
+  results <- results %>% filter(`Место` != "0")
   
+  winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% filter(!is.na(`Результат_сек`)) %>% summarise(`Время_победителя` = min(`Результат_сек`))
+
   results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
   
   results <- mutate(results, `Очки` = round(competition_coefficient*1000*`Коэффициент`*(2* (`Время_победителя` / `Результат_сек`) - 1)))
@@ -84,8 +87,7 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   results$`Очки`[is.na(results$`Очки`)] <- 0
   results$`Очки`[results$`Место` == 0] <- 0
   
-  require(stringi)
-  names(results) <- stri_encode(names(results), "", "UTF-8")
+  names(results) <- stri_enc_toutf8(names(results), is_unknown_8bit = FALSE, validate = FALSE)
   
   results <- as.data.frame(results)
   

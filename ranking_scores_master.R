@@ -61,7 +61,7 @@ ranking_scores_master <- function(results_source = c("googlesheets", "local"),
   } else {
     if(results_source == "local") {
       # Or do it all locally
-      reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+      reference_database <- read.csv2(file = "orienteers_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
     } else {
       stop("Unsupported results source!")
     }
@@ -104,7 +104,6 @@ ranking_scores_master <- function(results_source = c("googlesheets", "local"),
   results$`Очки`[is.na(results$`Очки`)] <- 0
   results$`Очки`[results$`Место` == 0] <- 0
   
-  require(stringi)
   names(results) <- stri_enc_toutf8(names(results), is_unknown_8bit = FALSE, validate = FALSE)
   
   results <- as.data.frame(results)

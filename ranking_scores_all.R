@@ -8,7 +8,7 @@ source("ranking_scores_master.R", encoding = "UTF-8")
 source("ranking_scores_elite.R", encoding = "UTF-8")
 
 results_source = "googlesheets"
-ranking_type = "elite" # Available options: "youth", "junior", "master", "elite"
+ranking_type = "youth" # Available options: "youth", "junior", "master", "elite"
 
 coefs_comps <- data.frame()
 

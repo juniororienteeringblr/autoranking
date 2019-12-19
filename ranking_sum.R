@@ -6,8 +6,8 @@ Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 library(dplyr)
 library(googlesheets)
 
-results_source = "local"
-ranking_type = "youth"
+results_source = "googlesheets"
+ranking_type = "junior"
 max_amount_of_starts_counted_for_sum = 8
 
 coefs_comps <- data.frame()
@@ -19,7 +19,7 @@ if(results_source == "googlesheets") {
   # Читаем список всех доступных файлов для будущего использования
   my_sheets <- gs_ls()
   
-  reference_database <- as.data.frame(gs_read(gs_title("Youth and Juniors database"), ws = format(Sys.Date(), "%Y")))
+  reference_database <- as.data.frame(gs_read(gs_title("Orienteers database"), ws = format(Sys.Date(), "%Y")))
   
   if(ranking_type == "youth") {
     coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts"), ws = format(Sys.Date(), "%Y")))
@@ -33,7 +33,7 @@ if(results_source == "googlesheets") {
 } else {
   if(results_source == "local") {
     # Or do it all locally
-    reference_database <- read.csv2(file = "youth_and_junior_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
+    reference_database <- read.csv2(file = "orienteers_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
     
     if(ranking_type == "youth") {
       print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для юношеского рейтинга.")
@@ -108,6 +108,8 @@ results_sum$Среднее <- apply(X = select(results_sum, starts_with("Очк�
                              MARGIN = 1,
                              FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < max_amount_of_starts_counted_for_sum, length(x), max_amount_of_starts_counted_for_sum)], na.rm = TRUE))})
 
+# Выбираем только нужные колонки из базы
+reference_database <- reference_database[, c("ФИ", "ГР", "Группа")]
 
 sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))
 
