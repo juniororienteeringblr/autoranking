@@ -8,35 +8,34 @@ source("ranking_scores_master.R", encoding = "UTF-8")
 source("ranking_scores_elite.R", encoding = "UTF-8")
 
 results_source = "googlesheets"
-ranking_type = "youth" # Available options: "youth", "junior", "master", "elite"
+ranking_type = "elite" # Available options: "youth", "junior", "master", "elite"
 
 coefs_comps <- data.frame()
 
 if(results_source == "googlesheets") {
   # Возможно, попросит аутентификации в браузере!
-  require(googlesheets)
+  require(googledrive)
+  require(googlesheets4)
   
   if(ranking_type == "youth") {
-    coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts"), ws = format(Sys.Date(), "%Y")))
-    coefs_comps$Дата <- as.character(coefs_comps$Дата)
+    googlesheet_name <- "Youth Ranking Starts"
   } else {
     if(ranking_type == "junior") {
-      coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts"), ws = format(Sys.Date(), "%Y")))
-      coefs_comps$Дата <- as.character(coefs_comps$Дата)
+      googlesheet_name <- "Junior Ranking Starts"
     } else {
       if(ranking_type == "master") {
-        coefs_comps <- as.data.frame(gs_read(gs_title("Master Ranking Starts"), ws = format(Sys.Date(), "%Y")))
-        coefs_comps$Дата <- as.character(coefs_comps$Дата)
+        googlesheet_name <- "Master Ranking Starts"
       } else {
         if(ranking_type == "elite") {
-          coefs_comps <- as.data.frame(gs_read(gs_title("Elite Ranking Starts"), ws = format(Sys.Date(), "%Y")))
-          coefs_comps$Дата <- as.character(coefs_comps$Дата)
+          googlesheet_name <- "Elite Ranking Starts"
         } else{
           stop("Unsupported rating type!")
         }
       }
     }
   }
+  coefs_comps <- as.data.frame(read_sheet(drive_find(pattern = googlesheet_name, type = "spreadsheet", n_max=1), sheet = format(Sys.Date(), "%Y")))
+  coefs_comps$Дата <- as.character(coefs_comps$Дата)
 } else {
   if(results_source == "local") {
     # Or do it all locally

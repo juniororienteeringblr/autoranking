@@ -20,25 +20,16 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   print(paste("Computing ranking for date:", competition_date, "and coefficient", competition_coefficient))
   
   if(results_source == "googlesheets") {
-    require(googlesheets)
-    
-    # Читаем список всех доступных файлов
-    # возможно, попросит аутентификации в браузере!
-    my_sheets <- gs_ls()
+    require(googlesheets4)
     
     # Ищем тот документ, который соответствует дате
-    results_filename <- my_sheets$sheet_title[grepl(pattern = paste0("^", competition_date, "_", competition_name, "_", competition_distance),
-                                                    x = my_sheets$sheet_title)]
+    googlesheet_results_name = paste0(competition_date, "_", competition_name, "_", competition_distance)
+    results_sheet <- drive_find(pattern = googlesheet_results_name, type = "spreadsheet", n_max=1)
     
-    print(results_filename)
-    
-    results_sheet <- gs_title(results_filename)
-    
-    # list worksheets (not necessary here as we have only one sheet for every results file)
-    gs_ws_ls(results_sheet)
+    print(results_sheet)
     
     # Читаем файл результатов
-    results <- as.data.frame(gs_read(ss = results_sheet, ws="results"))
+    results <- as.data.frame(read_sheet(ss = results_sheet, sheet="results"))
   } else {
     if(results_source == "local") {
       # Or do it all locally
@@ -54,10 +45,8 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   
   # Читаем базу ориентировщиков
   if(results_source == "googlesheets") {
-    # Читаем список всех доступных файлов для будущего использования
-    my_sheets <- gs_ls()
+    reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database", type = "spreadsheet", n_max=1), sheet = format(Sys.Date(), "%Y")))
     
-    reference_database <- as.data.frame(gs_read(gs_title("Orienteers database"), ws = format(Sys.Date(), "%Y")))
   } else {
     if(results_source == "local") {
       # Or do it all locally
@@ -112,12 +101,10 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   
   # Тут не нужно выбирать людей, подходящих по возрасту, подходят все, кто бегал нужные дистанции
   if(results_source == "googlesheets") {
-    if("scores_elite_ranking" %in% gs_ws_ls(results_sheet)) {
-      results_sheet <- results_sheet %>%
-        gs_ws_delete(ws = "scores_elite_ranking", verbose = FALSE)
+    if("scores_elite_ranking" %in% sheet_names(results_sheet)) {
+      sheet_delete(results_sheet, "scores_elite_ranking")
     }
-    results_sheet <- results_sheet %>%
-      gs_ws_new(ws_title = "scores_elite_ranking", input = results, verbose = TRUE)
+    sheet_write(results, ss = results_sheet, sheet = "scores_elite_ranking")
   } else {
     if(results_source == "local") {
       # Or do it all locally
