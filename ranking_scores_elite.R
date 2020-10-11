@@ -23,13 +23,14 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
     require(googlesheets4)
     
     # Ищем тот документ, который соответствует дате
+    print(paste("Searching for the file", paste0(competition_date, "_", competition_name, "_", competition_distance)))
     googlesheet_results_name = paste0(competition_date, "_", competition_name, "_", competition_distance)
-    results_sheet <- drive_find(pattern = googlesheet_results_name, type = "spreadsheet", n_max=1)
+    results_sheet <- drive_find(pattern = googlesheet_results_name, type = "spreadsheet")
     
     print(results_sheet)
     
     # Читаем файл результатов
-    results <- as.data.frame(read_sheet(ss = results_sheet, sheet="results"))
+    results <- as.data.frame(read_sheet(ss = results_sheet, sheet="results", col_types='ccciicccc'))
   } else {
     if(results_source == "local") {
       # Or do it all locally
@@ -45,7 +46,10 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   
   # Читаем базу ориентировщиков
   if(results_source == "googlesheets") {
-    reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database", type = "spreadsheet", n_max=1), sheet = format(Sys.Date(), "%Y")))
+    reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
+                                                              type = "spreadsheet", n_max=1),
+                                                   sheet = format(Sys.Date(), "%Y"),
+                                                   col_types='ccciccccccccc'))
     
   } else {
     if(results_source == "local") {
@@ -69,6 +73,8 @@ ranking_scores_elite <- function(results_source = c("googlesheets", "local"),
   library(dplyr)
   # Убираем спортсменов-не членов федерации
   reference_database <- reference_database[! is.na(reference_database$`Член БФО в текущем году`), ]
+  # Убираем тех, кто оплатил взнос после даты соревнований
+  reference_database <- reference_database[as.Date(reference_database$`Дата оплаты`, '%d.%m.%Y') <= as.Date(competition_date, '%Y%m%d'), ]
   results <- semi_join(results, reference_database, by = c("ФИ", "ГР"))
   
   # У сошедших в графе "место" стоит 0, у участников в/к - "в/к"

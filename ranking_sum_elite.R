@@ -4,25 +4,27 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 library(dplyr)
-library(googlesheets)
+require(googledrive)
+library(googlesheets4)
 
 results_source = "googlesheets"
 ranking_type = "elite"
-max_amount_of_starts_counted_for_sum = 7
+max_amount_of_starts_counted_for_sum = 4
 
 coefs_comps <- data.frame()
 
 if(results_source == "googlesheets") {
   # Возможно, попросит аутентификации в браузере!
-  require(googlesheets)
+  require(googlesheets4)
   
-  # Читаем список всех доступных файлов для будущего использования
-  my_sheets <- gs_ls()
-  
-  reference_database <- as.data.frame(gs_read(gs_title("Orienteers database"), ws = format(Sys.Date(), "%Y")))
+  reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
+                                                            type = "spreadsheet", n_max=1),
+                                                 sheet = format(Sys.Date(), "%Y"),
+                                                 col_types='ccciccccccccc'))
   
   if(ranking_type == "elite") {
-    coefs_comps <- as.data.frame(gs_read(gs_title("Elite Ranking Starts"), ws = format(Sys.Date(), "%Y")))
+    googlesheet_name <- "Elite Ranking Starts"
+    coefs_comps <- as.data.frame(read_sheet(drive_find(pattern = googlesheet_name, type = "spreadsheet", n_max=1), sheet = format(Sys.Date(), "%Y")))
   } else {
     stop("Unsupported rating type!")
   }
@@ -52,10 +54,10 @@ for (i in 1:nrow(passed_comps)) {
   if(results_source == "googlesheets") {
     # Ищем тот документ, который соответствует дате
     results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
-    results_sheet <- gs_title(results_filename)
-    print(results_sheet)
+    results_sheet <- drive_find(pattern = results_filename, type = "spreadsheet")
+    
     # Читаем файл результатов
-    result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = paste0("scores_", ranking_type, "_ranking")))
+    result_list[[i]] <- as.data.frame(read_sheet(ss = results_sheet, sheet="scores_elite_ranking", col_types='ccciiciccicii'))
   } else {
     if(results_source == "local") {
       result_list[[i]] <- read.csv2(file = file.path(getwd(), list.files(file.path(getwd()),
