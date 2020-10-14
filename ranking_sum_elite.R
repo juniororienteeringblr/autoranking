@@ -4,70 +4,48 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 library(dplyr)
+library(xlsx)
 require(googledrive)
 library(googlesheets4)
 
-results_source = "googlesheets"
-ranking_type = "elite"
-max_amount_of_starts_counted_for_sum = 4
+ranking_type = "elite"  # "elite" or "sprint" are available
+max_amount_of_starts_counted_for_sum = 7
 
 coefs_comps <- data.frame()
 
-if(results_source == "googlesheets") {
-  # Возможно, попросит аутентификации в браузере!
-  require(googlesheets4)
-  
-  reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
-                                                            type = "spreadsheet", n_max=1),
-                                                 sheet = format(Sys.Date(), "%Y"),
-                                                 col_types='ccciccccccccc'))
-  
-  if(ranking_type == "elite") {
-    googlesheet_name <- "Elite Ranking Starts"
-    coefs_comps <- as.data.frame(read_sheet(drive_find(pattern = googlesheet_name, type = "spreadsheet", n_max=1), sheet = format(Sys.Date(), "%Y")))
+# Возможно, попросит аутентификации в браузере!
+reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
+                                                          type = "spreadsheet", n_max=1),
+                                               sheet = format(Sys.Date(), "%Y"),
+                                               col_types='ccciccccccccc'))
+
+if(ranking_type == "elite") {
+  googlesheet_name <- "Elite Ranking Starts"
+} else {
+  if(ranking_type == "sprint") {
+    googlesheet_name <- "Sprint Ranking Starts"
   } else {
     stop("Unsupported rating type!")
   }
-} else {
-  if(results_source == "local") {
-    # Or do it all locally
-    reference_database <- read.csv2(file = "orienteers_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-    
-    if(ranking_type == "elite") {
-      print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для ветеранского рейтинга.")
-      coefs_comps_filename <- file.choose()
-      coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
-                               colClasses = c(rep("character", 4), "double"))
-    } else {
-      stop("Unsupported rating type!")
-    }
-  } else {
-    stop("Unsupported results source!")
-  }
 }
+
+coefs_comps <- as.data.frame(read_sheet(drive_find(pattern = googlesheet_name,
+                                                   type = "spreadsheet"),
+                                        sheet = format(Sys.Date(), "%Y")))
 
 result_list <- list() #create an empty list
 
 passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
 for (i in 1:nrow(passed_comps)) {
-  if(results_source == "googlesheets") {
-    # Ищем тот документ, который соответствует дате
-    results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
-    results_sheet <- drive_find(pattern = results_filename, type = "spreadsheet")
-    
-    # Читаем файл результатов
-    result_list[[i]] <- as.data.frame(read_sheet(ss = results_sheet, sheet="scores_elite_ranking", col_types='ccciiciccicii'))
-  } else {
-    if(results_source == "local") {
-      result_list[[i]] <- read.csv2(file = file.path(getwd(), list.files(file.path(getwd()),
-                                                                         pattern = paste0("^", coefs_comps$Дата[i],
-                                                                                          ".*", ranking_type, "_ranking\\.csv"))),
-                                    encoding = "UTF-8", stringsAsFactors = FALSE)
-    } else {
-      stop("Unsupported results source!")
-    }
-  }
+  # Ищем тот документ, который соответствует дате
+  results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
+  results_sheet <- drive_find(pattern = results_filename, type = "spreadsheet")
+  
+  # Читаем файл результатов
+  sheet_name = paste0("scores_", ranking_type, "_ranking")
+  
+  result_list[[i]] <- as.data.frame(read_sheet(ss = results_sheet, sheet=sheet_name, col_types='ccciiciccicii'))
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
@@ -107,9 +85,7 @@ sum <- sum[order(sum$Группа, -sum$Сумма), ]
 colnames(sum)[grep("Очки_\\d{8}", colnames(sum))] <- format(strptime(substring(colnames(sum)[grep("Очки_\\d{8}", colnames(sum))], 10, 14), format = "%m%d"), format = "%d.%m")
 
 # Убираем людей, которые в элитном рейтинге участия не принимали (у них в сумме не 0, а NA)
-if (ranking_type == "elite") {
-  sum = filter(sum, ! is.na(Сумма))
-}
+sum = filter(sum, ! is.na(Сумма))
 
 library(xlsx) #load the package
 filename = paste0(ranking_type, "_ranking_sum_by_date_", last(passed_comps$Дата), ".xlsx")
