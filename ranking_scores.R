@@ -1,5 +1,4 @@
-ranking_scores <- function(results_source = c("googlesheets", "local"),
-                           competition_date = NA,
+ranking_scores <- function(competition_date = NA,
                            competition_name = NA,
                            competition_distance = NA,
                            ranking_type = c("youth", "junior"),
@@ -7,50 +6,19 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   # Шапка файлов результатов должна быть следующей
   # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа
   
-  if(is.na(competition_date)) {
-    print("Enter competitions date: ")
-    competition_date <- as.character(readline())
-  }
-  
-  if(is.na(competition_coefficient)) {
-    print("Enter competitions coefficient: ")
-    competition_coefficient <- as.numeric(readline())
-  }
-  
   print(paste("Computing ranking for date:", competition_date, "and coefficient", competition_coefficient))
 
-  if(results_source == "googlesheets") {
-    require(googlesheets)
-    
-    # Читаем список всех доступных файлов
-    # возможно, попросит аутентификации в браузере!
-    my_sheets <- gs_ls()
-    
-    # Ищем тот документ, который соответствует дате
-    results_filename <- my_sheets$sheet_title[grepl(pattern = paste0("^", competition_date, "_", competition_name, "_", competition_distance),
-                                                    x = my_sheets$sheet_title)]
-    
-    print(results_filename)
-    
-    results_sheet <- gs_title(results_filename)
-    
-    # list worksheets (not necessary here as we have only one sheet for every results file)
-    gs_ws_ls(results_sheet)
-    
-    # Читаем файл результатов
-    results <- as.data.frame(gs_read(ss = results_sheet, ws="results"))
-  } else {
-    if(results_source == "local") {
-      # Or do it all locally
-      results_filename <- paste0(competition_date, "_", competition_name, "_", competition_distance, ".csv")
-      results <- read.csv2(file.path(getwd(), "results", results_filename), encoding = "UTF-8",
-                           colClasses = c("character", "character", "character", "integer",
-                                          "integer", "character", "character", "character",
-                                          "character"))
-    } else {
-      stop("Unsupported results source!")
-    }
-  }
+  require(googlesheets4)
+  
+  # Ищем тот документ, который соответствует дате
+  print(paste("Searching for the file", paste0(competition_date, "_", competition_name, "_", competition_distance)))
+  googlesheet_results_name = paste0(competition_date, "_", competition_name, "_", competition_distance)
+  results_sheet <- drive_find(pattern = googlesheet_results_name, type = "spreadsheet")
+  
+  print(results_sheet)
+  
+  # Читаем файл результатов
+  results <- as.data.frame(read_sheet(ss = results_sheet, sheet="results", col_types='ccciicccc'))
   
   library(stringi)
   library(stringr)
@@ -94,51 +62,20 @@ ranking_scores <- function(results_source = c("googlesheets", "local"),
   # Выбираем только людей подходящих групп по возрасту
   if(ranking_type == "youth") {
     results <- results[as.integer(format(Sys.Date(), "%Y")) - results$`ГР` <= 18, ]
-    if(results_source == "googlesheets") {
-      if("scores_youth_ranking" %in% gs_ws_ls(results_sheet)) {
-        results_sheet <- results_sheet %>%
-          gs_ws_delete(ws = "scores_youth_ranking", verbose = FALSE)
-      }
-      results_sheet <- results_sheet %>%
-        gs_ws_new(ws_title = "scores_youth_ranking", input = results, verbose = TRUE)
-    } else {
-      if(results_source == "local") {
-        # Or do it all locally
-        results_score_filename <- paste0(str_replace(pattern = "\\.csv", string = results_filename, replacement = ""),
-                                         "_scores_youth_ranking.csv")
-        write.csv2(x = results, file = file.path(getwd(), "results", results_score_filename),
-                   row.names = FALSE, fileEncoding = "UTF-8")
-      } else {
-        stop("Unsupported results source!")
-      }
-    }
-    
   } else {
     if(ranking_type == "junior") {
       results <- results[between(as.integer(format(Sys.Date(), "%Y")) - results$`ГР`, 19, 20), ]
-      if(results_source == "googlesheets") {
-        if("scores_junior_ranking" %in% gs_ws_ls(results_sheet)) {
-          results_sheet <- results_sheet %>%
-            gs_ws_delete(ws = "scores_junior_ranking", verbose = FALSE)
-        }
-        results_sheet <- results_sheet %>%
-          gs_ws_new(ws_title = "scores_junior_ranking", input = results, verbose = TRUE)
-      } else {
-        if(results_source == "local") {
-          # Or do it all locally
-          results_score_filename <- paste0(str_replace(pattern = "\\.csv", string = results_filename, replacement = ""),
-                                           "_scores_junior_ranking.csv")
-          write.csv2(x = results, file = file.path(getwd(), "results", results_score_filename),
-                     row.names = FALSE, fileEncoding = "UTF-8")
-        } else {
-          stop("Unsupported results source!")
-        }
-      }
     } else {
       stop("Unsupported ranking type!")
     }
   }
   
-  rm(coefs_group, results, winning_time)
+  sheet_name = paste0("scores_", ranking_type, "_ranking")
   
+  if(sheet_name %in% sheet_names(results_sheet)) {
+    sheet_delete(results_sheet, sheet_name)
+  }
+  sheet_write(results, ss = results_sheet, sheet = sheet_name)
+  
+  rm(coefs_group, results, winning_time)
 }
