@@ -3,11 +3,12 @@
 # For Windows
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
-source("ranking_scores.R", encoding = "UTF-8")
+source("ranking_scores_youth.R", encoding = "UTF-8")
 source("ranking_scores_master.R", encoding = "UTF-8")
 source("ranking_scores_elite.R", encoding = "UTF-8")
+source("ranking_scores_junior.R", encoding = "UTF-8")
 
-ranking_type = "sprint" # Available options: "youth", "junior", "master", "elite", "sprint"
+ranking_type = 'junior' # Available options: "youth", "junior", "master", "elite", "sprint"
 
 coefs_comps <- data.frame()
 
@@ -43,9 +44,9 @@ coefs_comps$Дата <- as.character(coefs_comps$Дата)
 
 passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
-if ((ranking_type == "youth") | (ranking_type == "junior")) {
+if (ranking_type == "youth") {
   apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
-    ranking_scores(competition_date = x["Дата"],
+    ranking_scores_youth(competition_date = x["Дата"],
                    competition_name = x["Название"],
                    competition_distance = x["Вид"],
                    ranking_type = ranking_type,
@@ -60,8 +61,7 @@ if ((ranking_type == "youth") | (ranking_type == "junior")) {
                             ranking_type = ranking_type,
                             competition_coefficient = as.numeric(x["Коэффициент"]))
     })
-  }
-  else {
+  } else {
     if ((ranking_type == "elite") | (ranking_type == "sprint")) {
       apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
         ranking_scores_elite(competition_date = x["Дата"],
@@ -71,7 +71,17 @@ if ((ranking_type == "youth") | (ranking_type == "junior")) {
                              competition_coefficient = as.numeric(x["Коэффициент"]))
       })
     } else {
-      stop("Unsupported ranking type!")
+      if  (ranking_type == "junior") {
+        apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
+          ranking_scores_junior(competition_date = x["Дата"],
+                                competition_name = x["Название"],
+                                competition_distance = x["Вид"],
+                                ranking_type = ranking_type,
+                                competition_coefficient = as.numeric(x["Коэффициент"]))
+        })
+      } else {
+        stop("Unsupported ranking type!")
+      }
     }
   }
 }

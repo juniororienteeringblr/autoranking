@@ -4,79 +4,47 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 library(dplyr)
-library(googlesheets)
+library(googlesheets4)
 
 results_source = "googlesheets"
-ranking_type = "junior"
-max_amount_of_starts_counted_for_sum = 8
+ranking_type = "youth"
+max_amount_of_starts_counted_for_sum = 7
 
 coefs_comps <- data.frame()
 
-if(results_source == "googlesheets") {
-  # Возможно, попросит аутентификации в браузере!
-  require(googlesheets)
-  
-  # Читаем список всех доступных файлов для будущего использования
-  my_sheets <- gs_ls()
-  
-  reference_database <- as.data.frame(gs_read(gs_title("Orienteers database"), ws = format(Sys.Date(), "%Y")))
-  
-  if(ranking_type == "youth") {
-    coefs_comps <- as.data.frame(gs_read(gs_title("Youth Ranking Starts"), ws = format(Sys.Date(), "%Y")))
-  } else {
-    if(ranking_type == "junior") {
-      coefs_comps <- as.data.frame(gs_read(gs_title("Junior Ranking Starts"), ws = format(Sys.Date(), "%Y")))
-    } else {
-      stop("Unsupported rating type!")
-    }
-  }
+# Возможно, попросит аутентификации в браузере!
+reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
+                                                          type = "spreadsheet", n_max=1),
+                                               sheet = format(Sys.Date(), "%Y"),
+                                               col_types='ccciccccccccc'))
+
+if(ranking_type == "youth") {
+  googlesheet_name <- "Youth Ranking Starts"
 } else {
-  if(results_source == "local") {
-    # Or do it all locally
-    reference_database <- read.csv2(file = "orienteers_database.csv", encoding = "UTF-8", stringsAsFactors = FALSE)
-    
-    if(ranking_type == "youth") {
-      print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для юношеского рейтинга.")
-      coefs_comps_filename <- file.choose()
-      coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
-                               colClasses = c(rep("character", 4), "double"))
-    } else {
-      if(ranking_type == "junior") {
-        print("Выберите файл с описанием рейтинговых стартов и их коэффициентов для юниорского рейтинга.")
-        coefs_comps_filename <- file.choose()
-        coefs_comps <- read.csv2(coefs_comps_filename, encoding = "UTF-8", stringsAsFactors = FALSE,
-                                 colClasses = c(rep("character", 4), "double"))
-      } else {
-        stop("Unsupported rating type!")
-      }
-    }
+  if(ranking_type == "junior") {
+    googlesheet_name <- "Junior Ranking Starts"
   } else {
-    stop("Unsupported results source!")
+    stop("Unsupported rating type!")
   }
 }
+
+coefs_comps <- as.data.frame(read_sheet(drive_find(pattern = googlesheet_name,
+                                                   type = "spreadsheet"),
+                                        sheet = format(Sys.Date(), "%Y")))
 
 result_list <- list() #create an empty list
 
 passed_comps <- coefs_comps[!is.na(coefs_comps$`Ссылка на результаты`), ]
 
 for (i in 1:nrow(passed_comps)) {
-  if(results_source == "googlesheets") {
-    # Ищем тот документ, который соответствует дате
-    results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
-    results_sheet <- gs_title(results_filename)
-    print(results_sheet)
-    # Читаем файл результатов
-    result_list[[i]] <- as.data.frame(gs_read(ss = results_sheet, ws = paste0("scores_", ranking_type, "_ranking")))
-  } else {
-    if(results_source == "local") {
-      result_list[[i]] <- read.csv2(file = file.path(getwd(), list.files(file.path(getwd()),
-                                                                         pattern = paste0("^", coefs_comps$Дата[i],
-                                                                                          ".*", ranking_type, "_ranking\\.csv"))),
-                                    encoding = "UTF-8", stringsAsFactors = FALSE)
-    } else {
-      stop("Unsupported results source!")
-    }
-  }
+  # Ищем тот документ, который соответствует дате
+  results_filename <- paste0(passed_comps$Дата[i], "_", passed_comps$Название[i], "_", passed_comps$Вид[i])
+  results_sheet <- drive_find(pattern = results_filename, type = "spreadsheet")
+  
+  # Читаем файл результатов
+  sheet_name = paste0("scores_", ranking_type, "_ranking")
+  
+  result_list[[i]] <- as.data.frame(read_sheet(ss = results_sheet, sheet=sheet_name, col_types='ccciiciccicdii'))
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
