@@ -1,4 +1,4 @@
-ranking_scores <- function(competition_date = NA,
+ranking_scores_youth <- function(competition_date = NA,
                            competition_name = NA,
                            competition_distance = NA,
                            ranking_type = c("youth", "junior"),

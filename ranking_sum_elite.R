@@ -87,7 +87,6 @@ colnames(sum)[grep("Очки_\\d{8}", colnames(sum))] <- format(strptime(substri
 # Убираем людей, которые в элитном рейтинге участия не принимали (у них в сумме не 0, а NA)
 sum = filter(sum, ! is.na(Сумма))
 
-library(xlsx) #load the package
 filename = paste0(ranking_type, "_ranking_sum_by_date_", last(passed_comps$Дата), ".xlsx")
 
 for(i in sort(unique(sum$Группа))) {
