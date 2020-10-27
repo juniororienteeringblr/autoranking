@@ -1,7 +1,7 @@
 ranking_scores_elite <- function(competition_date = NA,
                                  competition_name = NA,
                                  competition_distance = NA,
-                                 ranking_type = c("elite", "sprint"),
+                                 ranking_type = c("elite", "sprint", 'mtbo', 'ski'),
                                  competition_coefficient = NA) {
   # Шапка файлов результатов должна быть следующей
   # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа

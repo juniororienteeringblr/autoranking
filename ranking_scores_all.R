@@ -8,7 +8,7 @@ source("ranking_scores_master.R", encoding = "UTF-8")
 source("ranking_scores_elite.R", encoding = "UTF-8")
 source("ranking_scores_junior.R", encoding = "UTF-8")
 
-ranking_type = 'junior' # Available options: "youth", "junior", "master", "elite", "sprint"
+ranking_type = 'junior' # Available options: "youth", "junior", "master", "elite", "sprint", 'mtbo', 'ski'
 
 coefs_comps <- data.frame()
 
@@ -30,7 +30,15 @@ if(ranking_type == "youth") {
         if(ranking_type == "sprint") {
           googlesheet_name <- "Sprint Ranking Starts"
         } else {
-          stop("Unsupported rating type!")
+          if(ranking_type == "mtbo") {
+            googlesheet_name <- "MTBO Ranking Starts"
+          } else {
+            if(ranking_type == "ski") {
+              googlesheet_name <- "Ski Ranking Starts"
+            } else {
+              stop("Unsupported rating type!")
+            }
+          }
         }
       }
     }
@@ -62,7 +70,7 @@ if (ranking_type == "youth") {
                             competition_coefficient = as.numeric(x["Коэффициент"]))
     })
   } else {
-    if ((ranking_type == "elite") | (ranking_type == "sprint")) {
+    if ((ranking_type == "elite") | (ranking_type == "sprint") | (ranking_type == "mtbo") | (ranking_type == "ski")) {
       apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
         ranking_scores_elite(competition_date = x["Дата"],
                              competition_name = x["Название"],

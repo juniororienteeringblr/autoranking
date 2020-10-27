@@ -1,4 +1,4 @@
-ranking_scores <- function(competition_date = NA,
+ranking_scores_junior <- function(competition_date = NA,
                            competition_name = NA,
                            competition_distance = NA,
                            ranking_type = c("youth", "junior"),
@@ -20,6 +20,12 @@ ranking_scores <- function(competition_date = NA,
   # Читаем файл результатов
   results <- as.data.frame(read_sheet(ss = results_sheet, sheet="results", col_types='ccciicccc'))
   
+  # Читаем базу ориентировщиков
+  reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
+                                                            type = "spreadsheet", n_max=1),
+                                                 sheet = format(Sys.Date(), "%Y"),
+                                                 col_types='ccciccccccccc'))
+  
   library(stringi)
   library(stringr)
   results$`ФИ` <- str_to_title(results$`ФИ`)
@@ -30,17 +36,32 @@ ranking_scores <- function(competition_date = NA,
   results <- results[!grepl("(Ukr)|(Rus)|(RUS)|(rus)|(Mda)|(Lat)|(Est)|(EST)|(UKR)|(ukr)|(HUN)|(hun)|(FIN)|(POL)|(pol)$", results$`ФИ`), ]
   results <- results[!grepl("(Ukr)|(Rus)|(RUS)|(rus)|(Mda)|(Lat)|(Est)|(EST)|(UKR)|(ukr)|(HUN)|(hun)|(FIN)|(POL)|(pol)$", results$`Коллектив`), ]
   
+  library(dplyr)
+  # Убираем спортсменов-не членов федерации
+  reference_database <- reference_database[! is.na(reference_database$`Член БФО в текущем году`), ]
+  # Убираем тех, кто оплатил взнос после даты соревнований
+  reference_database <- reference_database[as.Date(reference_database$`Дата оплаты`, '%d.%m.%Y') <= as.Date(competition_date, '%Y%m%d'), ]
+  results <- semi_join(results, reference_database, by = c("ФИ", "ГР"))
+  
   # У сошедших в графе "место" стоит 0, у участников в/к - "в/к"
   results$`Место`[results$`Место` == "в/к"] <- "0"
   results$`Место` <- as.numeric(results$`Место`)
   results$`Результат_сек` <- as.numeric(as.difftime(as.character(results$`Результат`), format = "%H:%M:%S", units = "secs"))
   
-  coefs_group <- read.csv2(file = "group_coef.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
-                           colClasses = c("character", "double"))
+  # coefs_group <- read.csv2(file = "group_coef.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
+  #                          colClasses = c("character", "double"))
   
-  results$`Сложность` <- substr(results$`Группа`, str_locate(results$`Группа`, paste0("(", paste0(coefs_group$`Сложность`, collapse = "|"), ")")), 1000)
+  # results$`Сложность` <- substr(results$`Группа`, str_locate(results$`Группа`, paste0("(", paste0(coefs_group$`Сложность`, collapse = "|"), ")")), 1000)
+  results$`Сложность` <- substr(results$`Группа`, 2, 1000)
+  # Выбираем только группу 20 и сильнейшую из элитных групп
+  # ЕЩЕ НЕ СДЕЛАНО, СДЕЛАТЬ!!!
+  results <- results %>% filter(`Сложность` == stri_enc_toutf8("20") |
+                                  `Сложность` == stri_enc_toutf8("21") |
+                                  `Сложность` == stri_enc_toutf8("21E") |
+                                  `Сложность` == stri_enc_toutf8("21Е"))
+  
   library(dplyr)
-  results <- left_join(results, coefs_group, by = c("Сложность" = "Сложность"))
+  # results <- left_join(results, coefs_group, by = c("Сложность" = "Сложность"))
   
   # И чтобы не было в/к шников удаляем вообще их результаты
   results <- results %>% filter(`Место` != "0")
@@ -49,7 +70,8 @@ ranking_scores <- function(competition_date = NA,
 
   results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
   
-  results <- mutate(results, `Очки` = round(competition_coefficient*1000*`Коэффициент`*(2* (`Время_победителя` / `Результат_сек`) - 1)))
+  # results <- mutate(results, `Очки` = round(competition_coefficient*1000*`Коэффициент`*(2* (`Время_победителя` / `Результат_сек`) - 1)))
+  results <- mutate(results, `Очки` = round(competition_coefficient*(2* (`Время_победителя` / `Результат_сек`) - 1)))
   # results$`Очки`[results$`Очки` <= 1] <- 1
   results$`Очки`[results$`Очки` < 1] <- 0
   results$`Очки`[is.na(results$`Очки`)] <- 0
