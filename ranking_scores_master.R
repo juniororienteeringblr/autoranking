@@ -39,6 +39,9 @@ ranking_scores_master <- function(competition_date = NA,
   library(dplyr)
   # Убираем спортсменов-не членов федерации
   reference_database <- reference_database[! is.na(reference_database$`Член БФО в текущем году`), ]
+  # Убираем тех, кто оплатил взнос после даты соревнований
+  reference_database <- reference_database[as.Date(reference_database$`Дата оплаты`, '%d.%m.%Y') <= as.Date(competition_date, '%Y%m%d'), ]
+  filtered_out <- anti_join(results, reference_database, by = c("ФИ", "ГР"))
   results <- semi_join(results, reference_database, by = c("ФИ", "ГР"))
   
   # У сошедших в графе "место" стоит 0, у участников в/к - "в/к"
@@ -47,9 +50,11 @@ ranking_scores_master <- function(competition_date = NA,
   results$`Результат_сек` <- as.numeric(as.difftime(as.character(results$`Результат`), format = "%H:%M:%S", units = "secs"))
   
   results$`Сложность` <- substr(results$`Группа`, 2, 1000)
+  filtered_out$`Сложность` <- substr(filtered_out$`Группа`, 2, 1000)
   
   # Убираем группы младше 35
   results <- results %>% filter(`Сложность` >= 35)
+  filtered_out <- filtered_out %>% filter(`Сложность` >= 35)
   # И чтобы не было в/к шников удаляем вообще их результаты
   results <- results %>% filter(`Место` != "0")
   
@@ -64,16 +69,24 @@ ranking_scores_master <- function(competition_date = NA,
   results$`Очки`[results$`Место` == 0] <- 0
   
   names(results) <- stri_enc_toutf8(names(results), is_unknown_8bit = FALSE, validate = FALSE)
+  names(filtered_out) <- stri_enc_toutf8(names(filtered_out), is_unknown_8bit = FALSE, validate = FALSE)
   
   results <- as.data.frame(results)
+  filtered_out <- as.data.frame(filtered_out)
   
   # Выбираем только людей подходящих групп по возрасту
   results <- results[as.integer(format(Sys.Date(), "%Y")) - results$`ГР` >= 35, ]
+  filtered_out <- filtered_out[as.integer(format(Sys.Date(), "%Y")) - filtered_out$`ГР` >= 35, ]
   
   if(paste0("scores_", ranking_type, "_ranking") %in% sheet_names(results_sheet)) {
     sheet_delete(results_sheet, paste0("scores_", ranking_type, "_ranking"))
   }
   sheet_write(results, ss = results_sheet, sheet = paste0("scores_", ranking_type, "_ranking"))
   
-  rm(results, winning_time)
+  if(paste0("filtered_out_", ranking_type, "_ranking") %in% sheet_names(results_sheet)) {
+    sheet_delete(results_sheet, paste0("filtered_out_", ranking_type, "_ranking"))
+  }
+  sheet_write(filtered_out, ss = results_sheet, sheet = paste0("filtered_out_", ranking_type, "_ranking"))
+  
+  rm(results, filtered_out, winning_time)
 }
