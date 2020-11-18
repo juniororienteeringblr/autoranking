@@ -4,7 +4,8 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 library(dplyr)
-library(googlesheets4)
+require(googledrive)
+require(googlesheets4)
 
 results_source = "googlesheets"
 ranking_type = "youth"
@@ -45,6 +46,8 @@ for (i in 1:nrow(passed_comps)) {
   sheet_name = paste0("scores_", ranking_type, "_ranking")
   
   result_list[[i]] <- as.data.frame(read_sheet(ss = results_sheet, sheet=sheet_name, col_types='ccciiciccicdii'))
+  
+  # readline(prompt="Press [enter] to continue")  # Использовать, если происходит переполнение на стороне Гугла
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
