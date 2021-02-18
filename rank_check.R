@@ -95,3 +95,7 @@ for (i in 1:nrow(not_found_in_reference_database)) {
     print(paste(name_entered, 'same surnames in database for', same_surname))
   }
 }
+
+# Whom to add
+print("Add to the database")
+not_found_in_reference_database[c('ФИО', "Г.р.", "Разряд", "Клуб", "Чип")]
