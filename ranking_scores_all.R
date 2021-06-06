@@ -4,11 +4,12 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
 source("ranking_scores_youth.R", encoding = "UTF-8")
+source("selection_scores_youth.R", encoding = "UTF-8")
 source("ranking_scores_master.R", encoding = "UTF-8")
 source("ranking_scores_elite.R", encoding = "UTF-8")
 source("ranking_scores_junior.R", encoding = "UTF-8")
 
-ranking_type = 'junior' # Available options: "youth", "junior", "master", "elite", "sprint", 'mtbo', 'ski'
+ranking_type = 'youth' # Available options: "youth", "junior", "master", "elite", "sprint", 'mtbo', 'ski' 'youth_selection'
 
 coefs_comps <- data.frame()
 
@@ -36,7 +37,11 @@ if(ranking_type == "youth") {
             if(ranking_type == "ski") {
               googlesheet_name <- "Ski Ranking Starts"
             } else {
-              stop("Unsupported rating type!")
+              if(ranking_type == "youth_selection") {
+                googlesheet_name <- "Youth Selection Starts"
+              } else {
+                stop("Unsupported rating type!")
+              }
             }
           }
         }
@@ -88,7 +93,17 @@ if (ranking_type == "youth") {
                                 competition_coefficient = as.numeric(x["Коэффициент"]))
         })
       } else {
-        stop("Unsupported ranking type!")
+        if  (ranking_type == "youth_selection") {
+          apply(X = passed_comps, MARGIN = 1, FUN = function(x) {
+            selection_scores_youth(competition_date = x["Дата"],
+                                  competition_name = x["Название"],
+                                  competition_distance = x["Вид"],
+                                  ranking_type = ranking_type,
+                                  competition_coefficient = as.numeric(x["Коэффициент"]))
+          })
+        } else {
+          stop("Unsupported ranking type!")
+        }
       }
     }
   }
