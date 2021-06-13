@@ -3,10 +3,10 @@
 # For Windows
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
-source("ranking_scores_youth.R", encoding = "UTF-8")
-source("selection_scores_youth.R", encoding = "UTF-8")
-source("ranking_scores_master.R", encoding = "UTF-8")
-source("ranking_scores_elite.R", encoding = "UTF-8")
+source("ranking_scores_youth.R", encoding = "UTF-8")  # For youth raniking computation
+source("selection_scores_youth.R", encoding = "UTF-8")  # For youth selection computation
+source("ranking_scores_master.R", encoding = "UTF-8")  # For master ranking computation
+source("ranking_scores_elite.R", encoding = "UTF-8")  # For elite, sprint, mtbo and ski rankings computation
 source("ranking_scores_junior.R", encoding = "UTF-8")
 
 ranking_type = 'youth' # Available options: "youth", "junior", "master", "elite", "sprint", 'mtbo', 'ski' 'youth_selection'

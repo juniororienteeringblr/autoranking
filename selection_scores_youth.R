@@ -42,6 +42,10 @@ selection_scores_youth <- function(competition_date = NA,
   library(dplyr)
   results <- left_join(results, coefs_group, by = c("Сложность" = "Сложность"))
   
+  # Оставляем группы с 12 по 18
+  results <- results %>% filter(`Сложность` >= 12)
+  results <- results %>% filter(`Сложность` <= 18)
+  
   winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% filter(!is.na(`Результат_сек`)) %>% summarise(`Время_победителя` = min(`Результат_сек`))
 
   results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
