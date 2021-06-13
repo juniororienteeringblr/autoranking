@@ -17,7 +17,7 @@ coefs_comps <- data.frame()
 reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
                                                           type = "spreadsheet", n_max=1),
                                                sheet = format(Sys.Date(), "%Y"),
-                                               col_types='ccciccccccccc'))
+                                               col_types='ccciccccccccci'))
 
 if(ranking_type == "elite") {
   googlesheet_name <- "Elite Ranking Starts"
