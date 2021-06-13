@@ -1,13 +1,15 @@
 Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
 
-date_string <- "20180601"
+date_string <- "20210601"
+legenda_folder <- 'C:/Study/autoranking/for_legenda/'
 
-results_filename <- paste0("C:/Studies/autoranking/for_legenda/", date_string, "r.csv")
+results_filename <- paste0(legenda_folder, date_string, "r.csv")
 
+# ФИ	Коллектив	Квал	Номер	ГР	Результат	Место	Прим	Группа
 results <- read.csv(results_filename, encoding = "1251",
                      colClasses = c("character", "character", "character", "integer",
                                     "integer", "character", "character", "character",
-                                    "character"))
+                                    "character"), sep=';')
 
 library(stringi)
 library(stringr)
@@ -19,7 +21,7 @@ results$`Место`[results$`Место` == "в/к"] <- "0"
 results$`Место` <- as.numeric(results$`Место`)
 results$`Результат_сек` <- as.numeric(as.difftime(as.character(results$`Результат`), format = "%H:%M:%S", units = "secs"))
 
-coefs_group <- read.csv2(file = "C:/Studies/autoranking/for_legenda/group_coef_legenda.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
+coefs_group <- read.csv2(file = paste0(legenda_folder, "group_coef_legenda.txt"), encoding = "UTF-8", stringsAsFactors = FALSE,
                          colClasses = c("character", "double"))
 
 results$`Сложность` <- substr(results$`Группа`, str_locate(results$`Группа`, paste0("(", paste0(coefs_group$`Сложность`, collapse = "|"), ")")), 1000)
@@ -33,7 +35,7 @@ results$Очки[results$Место == 0] <- 0
 
 # Вычисляем правильную возрастную группу для человека
 
-results$`Возраст` <- 2018 - results$`ГР`
+results$`Возраст` <- 2021 - results$`ГР`
 
 results$`Возрастная_группа` <- paste0(substr(results$`Группа`, 1, 1),
                                  ifelse(results$`Возраст` > 20, "21",
@@ -53,7 +55,7 @@ results <- results %>%
 results$`Место_возр`[is.na(results$Место)] <- NA
 results$`Место_возр`[results$Место == 0] <- NA
 
-score_place <- read.csv2(file = "C:/Studies/autoranking/for_legenda/scores_legenda.txt", encoding = "UTF-8", stringsAsFactors = FALSE,
+score_place <- read.csv2(file = paste0(legenda_folder, "scores_legenda.txt"), encoding = "UTF-8", stringsAsFactors = FALSE,
                          colClasses = c("integer", "integer"))
 
 results <- left_join(results, score_place, by = c("Место_возр" = "Место"))
@@ -68,14 +70,13 @@ results_towrite <- results[, c("ФИ", "ГР", "Группа", "Результа
 results_towrite <- results_towrite[order(results_towrite$Возрастная_группа, results_towrite$Место_возр), ]
 
 write.csv(results_towrite,
-          file = paste0("C:/Studies/autoranking/for_legenda/",
-                        date_string, "r_для_награждения.csv"),
+          file = paste0(legenda_folder, date_string, "r_для_награждения.csv"),
           na = "",
           row.names = FALSE)
 
 # Поревьюить и поправить, если нужно, результаты для награждения!!!
 
-results_for_team <- read.csv(file = paste0("C:/Studies/autoranking/for_legenda/", date_string, "r_для_награждения.csv"))
+results_for_team <- read.csv(file = paste0(legenda_folder, date_string, "r_для_награждения.csv"))
 
 results_for_team <- filter(results_for_team, ! (`Возрастная_группа` %in% c("Ж21", "М21")))
 
@@ -86,21 +87,21 @@ sum_by_team <- results_for_team %>%
 # Сортируем
 sum_by_team <- sum_by_team[order(-sum_by_team$`Сумма_очков_коллектив`), ]
 
-write.csv(sum_by_team, file = paste0("C:/Studies/autoranking/for_legenda/", date_string, "r_кубок_коллективы.csv"), row.names = FALSE)
+write.csv(sum_by_team, file = paste0(legenda_folder, date_string, "r_кубок_коллективы.csv"), row.names = FALSE)
 
-# Наконец, когда будут два файла, считаем сумму для коллективов по двум этапам
-sum_team_1 <- read.csv(file = "C:/Studies/autoranking/for_legenda/20180601r_кубок_коллективы.csv")
-names(sum_team_1) <- c("Коллектив", "Сумма_очков_1")
-sum_team_2 <- read.csv(file = "C:/Studies/autoranking/for_legenda/20180831r_кубок_коллективы.csv")
-names(sum_team_2) <- c("Коллектив", "Сумма_очков_2")
-
-sum_teams <- full_join(sum_team_1, sum_team_2, by = c("Коллектив"))
-
-sum_teams[is.na(sum_teams)] <- 0
-
-sum_teams$`Сумма_Кубок` <- sum_teams$`Сумма_очков_1` + sum_teams$`Сумма_очков_2`
-
-# Сортируем
-sum_teams <- sum_teams[order(-sum_teams$`Сумма_Кубок`), ]
-
-write.csv(sum_teams, file = "C:/Studies/autoranking/for_legenda/Кубок_2018_результат.csv", row.names = FALSE)
+# # Наконец, когда будут два файла, считаем сумму для коллективов по двум этапам
+# sum_team_1 <- read.csv(file = paste0(legenda_folder, "20210601r_кубок_коллективы.csv"))
+# names(sum_team_1) <- c("Коллектив", "Сумма_очков_1")
+# sum_team_2 <- read.csv(file = paste0(legenda_folder, "20210831r_кубок_коллективы.csv"))
+# names(sum_team_2) <- c("Коллектив", "Сумма_очков_2")
+# 
+# sum_teams <- full_join(sum_team_1, sum_team_2, by = c("Коллектив"))
+# 
+# sum_teams[is.na(sum_teams)] <- 0
+# 
+# sum_teams$`Сумма_Кубок` <- sum_teams$`Сумма_очков_1` + sum_teams$`Сумма_очков_2`
+# 
+# # Сортируем
+# sum_teams <- sum_teams[order(-sum_teams$`Сумма_Кубок`), ]
+# 
+# write.csv(sum_teams, file = paste0(legenda_folder, "Кубок_2021_результат.csv", row.names = FALSE)
