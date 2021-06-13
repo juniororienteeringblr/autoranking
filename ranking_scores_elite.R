@@ -59,8 +59,6 @@ ranking_scores_elite <- function(competition_date = NA,
   filtered_out <- filtered_out %>% filter(`Сложность` == stri_enc_toutf8("21") |
                                             `Сложность` == stri_enc_toutf8("21E") |
                                             `Сложность` == stri_enc_toutf8("21Е"))
-  # И чтобы не было в/к шников удаляем вообще их результаты
-  results <- results %>% filter(`Место` != "0")
   
   winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% filter(!is.na(`Результат_сек`)) %>% summarise(`Время_победителя` = min(`Результат_сек`))
   

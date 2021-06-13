@@ -24,7 +24,7 @@ ranking_scores_master <- function(competition_date = NA,
   reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
                                                             type = "spreadsheet", n_max=1),
                                                  sheet = format(Sys.Date(), "%Y"),
-                                                 col_types='ccciccccccccc'))
+                                                 col_types='ccciccccccccci'))
   
   library(stringi)
   library(stringr)
@@ -55,8 +55,6 @@ ranking_scores_master <- function(competition_date = NA,
   # Убираем группы младше 35
   results <- results %>% filter(`Сложность` >= 35)
   filtered_out <- filtered_out %>% filter(`Сложность` >= 35)
-  # И чтобы не было в/к шников удаляем вообще их результаты
-  results <- results %>% filter(`Место` != "0")
   
   winning_time <- results %>% filter(`Место` != 0) %>% group_by(`Группа`) %>% filter(!is.na(`Результат_сек`)) %>% summarise(`Время_победителя` = min(`Результат_сек`))
   

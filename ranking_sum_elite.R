@@ -8,8 +8,8 @@ library(xlsx)
 require(googledrive)
 library(googlesheets4)
 
-ranking_type = "elite"  # "elite", "sprint", 'mtbo' or 'ski' are available
-max_amount_of_starts_counted_for_sum = 7
+ranking_type = "mtbo"  # "elite", "sprint", 'mtbo' or 'ski' are available
+max_amount_of_starts_counted_for_sum = 5
 
 coefs_comps <- data.frame()
 

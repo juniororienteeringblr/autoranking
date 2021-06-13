@@ -17,7 +17,7 @@ coefs_comps <- data.frame()
 reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
                                                           type = "spreadsheet", n_max=1),
                                                sheet = format(Sys.Date(), "%Y"),
-                                               col_types='ccciccccccccc'))
+                                               col_types='ccciccccccccci'))
 
 if(ranking_type == "master") {
   googlesheet_name <- "Master Ranking Starts"
@@ -80,7 +80,7 @@ colnames(sum)[grep("Очки_\\d{8}", colnames(sum))] <- format(strptime(substri
 
 # Убираем неподходящие группы
 if (ranking_type == "master") {
-  sum = filter(sum, Группа %in% c("М35", "М40", "М45", "М50", "М55", "М60", "М65", "М70", "М75", "М80", "Ж35", "Ж40", "Ж45", "Ж50", "Ж55", "Ж60", "Ж65", "Ж70", "Ж75"))
+  sum = filter(sum, Группа %in% c("М35", "М40", "М45", "М50", "М55", "М60", "М65", "М70", "М75", "М80", "Ж35", "Ж40", "Ж45", "Ж50", "Ж55", "Ж60", "Ж65", "Ж70", "Ж75", "Ж80"))
 }
 
 filename = paste0(ranking_type, "_ranking_sum_by_date_", last(passed_comps$Дата), ".xlsx")
