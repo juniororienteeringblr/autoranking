@@ -1,3 +1,8 @@
+# For Linux
+# Sys.setlocale(category = "LC_ALL", locale = "ru_RU.UTF-8")
+# For Windows
+Sys.setlocale(category = "LC_ALL", locale = "Russian_Russia.1251")
+
 library("xlsx")
 
 working_dir <- 'C:/Users/Ann/Google Диск/БФО/3 - Соревнования и мероприятия/Результаты соревнований'
@@ -35,8 +40,7 @@ library(dplyr)
 should_be_rank <- left_join(competition_database, reference_database,
                         by = c('ФИО'='Название', 'Г.р.'='Год.рождения'))
 #colnames(should_be_rank)
-should_be_rank <- should_be_rank[c('ФИО', 'Г.р.', 'Разряд.x', 'Клуб.x',
-                                   'Активность', 'Разряд.y', 'Клуб.y')]
+should_be_rank <- should_be_rank[c('ФИО', 'Г.р.', 'Разряд.x', 'Клуб.x', 'Разряд.y', 'Клуб.y')]
 for (i in 1:nrow(should_be_rank)) {
   rank_entered <- should_be_rank[i, 'Разряд.x']
   rank_reference <- should_be_rank[i, 'Разряд.y']
@@ -66,6 +70,8 @@ for (i in 1:nrow(should_be_year)) {
 not_found_in_reference_database <- anti_join(competition_database,
                                              reference_database,
                                              by = c('ФИО'='Название'))
+not_found_in_reference_database <- not_found_in_reference_database[!duplicated(not_found_in_reference_database[c('ФИО', 'Г.р.')]), ]
+
 reference_database$Фамилия <- sapply(reference_database$Название, function(x){str_split(x, " ")[[1]][1]})
 library(stringdist)
 for (i in 1:nrow(not_found_in_reference_database)) {
@@ -98,4 +104,7 @@ for (i in 1:nrow(not_found_in_reference_database)) {
 
 # Whom to add
 print("Add to the database")
-not_found_in_reference_database[c('ФИО', "Г.р.", "Разряд", "Клуб", "Чип")]
+not_found_in_reference_database[c('ФИО', "Г.р.", "Разряд", "Клуб", 'Группа')]
+not_found_in_reference_database$Пол <- substring(not_found_in_reference_database$Группа, 1, 1)
+not_found_in_reference_database$Пол[! not_found_in_reference_database$Пол %in% c("М", "Ж")] <- NA
+write.csv2(x = not_found_in_reference_database[c('ФИО', "Г.р.", "Разряд", "Клуб", 'Пол')], file = "not_found_in_reference_database.csv", row.names = FALSE, fileEncoding = "UTF-8")

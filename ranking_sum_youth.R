@@ -7,9 +7,12 @@ library(dplyr)
 require(googledrive)
 require(googlesheets4)
 
+library(stringi)
+library(stringr)
+
 results_source = "googlesheets"
 ranking_type = 'youth'  # "youth" 'junior' 'youth_selection'
-max_amount_of_starts_counted_for_sum = 7
+max_amount_of_starts_counted_for_sum = 8
 
 coefs_comps <- data.frame()
 
@@ -17,7 +20,16 @@ coefs_comps <- data.frame()
 reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
                                                           type = "spreadsheet", n_max=1),
                                                sheet = format(Sys.Date(), "%Y"),
-                                               col_types='ccciccccccccc'))
+                                               col_types='cccicccccccc'))
+
+reference_database$`ФИ` <- str_to_title(reference_database$`ФИ`)
+reference_database$`ФИ` <- str_replace_all(reference_database$`ФИ`,
+                                                 stri_enc_toutf8("ё"),
+                                                 stri_enc_toutf8("е"))
+reference_database$`ФИ` <- str_replace_all(reference_database$`ФИ`,
+                                                 stri_enc_toutf8("Ё"),
+                                                 stri_enc_toutf8("Е"))
+
 
 if(ranking_type == "youth") {
   googlesheet_name <- "Youth Ranking Starts"
@@ -62,14 +74,27 @@ for (i in 1:nrow(passed_comps)) {
   }
   
   result_list[[i]] <- as.data.frame(read_sheet(ss = results_sheet, sheet=sheet_name, col_types='ccciiciccicdii'))
+  result_list[[i]]$Дата <- passed_comps$Дата[i]
+  result_list[[i]]$Соревнование <- passed_comps$Название[i]
+  result_list[[i]]$Вид <- passed_comps$Вид[i]
   
   # readline(prompt="Press [enter] to continue")  # Использовать, если происходит переполнение на стороне Гугла
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
+all_comps_results$`ФИ` <- str_to_title(all_comps_results$`ФИ`)
+all_comps_results$`ФИ` <- str_replace_all(all_comps_results$`ФИ`,
+                                                 stri_enc_toutf8("ё"),
+                                                 stri_enc_toutf8("е"))
+all_comps_results$`ФИ` <- str_replace_all(all_comps_results$`ФИ`,
+                                                 stri_enc_toutf8("Ё"),
+                                                 stri_enc_toutf8("Е"))
+
 whom_to_add <- anti_join(all_comps_results, reference_database, by = c("ФИ", "ГР"))
-whom_to_add <- filter(whom_to_add, !duplicated(whom_to_add[, c("ФИ", "ГР")]))
-write.csv2(x = whom_to_add[ , c("ФИ", "Коллектив", "Квал", "ГР", "Группа")], file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
+# whom_to_add <- filter(whom_to_add, !duplicated(whom_to_add[, c("ФИ", "ГР")]))
+# Сортируем
+whom_to_add <- whom_to_add[order(whom_to_add$ФИ, whom_to_add$ГР), ]
+write.csv2(x = whom_to_add[ , c("ФИ", "Коллектив", "Квал", "ГР", "Группа", "Дата", "Соревнование", "Вид")], file = "whom_to_add.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 print("ВНИМАНИЕ! Проверить, не нужно ли добавить участников в общую базу!")
 
@@ -96,6 +121,11 @@ results_sum$Среднее <- apply(X = select(results_sum, starts_with("Очк�
                              FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < max_amount_of_starts_counted_for_sum, length(x), max_amount_of_starts_counted_for_sum)], na.rm = TRUE))})
 
 # Выбираем только нужные колонки из базы
+reference_database$Возраст <- as.integer(format(Sys.Date(), "%Y")) - reference_database$ГР
+reference_database$Возраст <- sapply(reference_database$Возраст,
+                                     function(x) {ifelse(x < 21, x + x %% 2, ifelse(x >= 35, x - x %% 5, 21))})
+reference_database$Группа <- paste0(reference_database$Пол, reference_database$Возраст)
+
 reference_database <- reference_database[, c("ФИ", "ГР", "Группа")]
 
 sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))

@@ -46,7 +46,7 @@ ranking_scores_youth <- function(competition_date = NA,
 
   results <- left_join(results, winning_time, by = c("Группа" = "Группа"))
   
-  results <- mutate(results, `Очки` = round(competition_coefficient*1000*`Коэффициент`*(2* (`Время_победителя` / `Результат_сек`) - 1)))
+  results <- mutate(results, `Очки` = round(competition_coefficient*500*`Коэффициент`*(3* (`Время_победителя` / `Результат_сек`) - 1)))
   # results$`Очки`[results$`Очки` <= 1] <- 1
   results$`Очки`[results$`Очки` < 1] <- 0
   results$`Очки`[is.na(results$`Очки`)] <- 0
