@@ -8,8 +8,8 @@ library(xlsx)
 require(googledrive)
 library(googlesheets4)
 
-ranking_type = "mtbo"  # "elite", "sprint", 'mtbo' or 'ski' are available
-max_amount_of_starts_counted_for_sum = 5
+ranking_type = "elite"  # "elite", "sprint", 'mtbo' or 'ski' are available
+max_amount_of_starts_counted_for_sum = 6
 
 coefs_comps <- data.frame()
 
@@ -17,7 +17,15 @@ coefs_comps <- data.frame()
 reference_database <- as.data.frame(read_sheet(drive_find(pattern = "Orienteers database",
                                                           type = "spreadsheet", n_max=1),
                                                sheet = format(Sys.Date(), "%Y"),
-                                               col_types='ccciccccccccci'))
+                                               col_types='cccicccccccc'))
+
+reference_database$`ФИ` <- str_to_title(reference_database$`ФИ`)
+reference_database$`ФИ` <- str_replace_all(reference_database$`ФИ`,
+                                           stri_enc_toutf8("\U0451"), # ё
+                                           stri_enc_toutf8("\U0435")) # е
+reference_database$`ФИ` <- str_replace_all(reference_database$`ФИ`,
+                                           stri_enc_toutf8("\U0401"), # Ё
+                                           stri_enc_toutf8("\U0415")) # Е
 
 if(ranking_type == "elite") {
   googlesheet_name <- "Elite Ranking Starts"
@@ -57,6 +65,14 @@ for (i in 1:nrow(passed_comps)) {
 }
 all_comps_results <- do.call("rbind",result_list) #combine all vectors into a matrix
 
+all_comps_results$`ФИ` <- str_to_title(all_comps_results$`ФИ`)
+all_comps_results$`ФИ` <- str_replace_all(all_comps_results$`ФИ`,
+                                          stri_enc_toutf8("\U0451"), # ё
+                                          stri_enc_toutf8("\U0435")) # е
+all_comps_results$`ФИ` <- str_replace_all(all_comps_results$`ФИ`,
+                                          stri_enc_toutf8("\U0401"), # Ё
+                                          stri_enc_toutf8("\U0415")) # Е
+
 for(i in 1:nrow(passed_comps)) {
   result_list[[i]] <- result_list[[i]][, c("ФИ", "ГР", "Очки")]
   names(result_list[[i]])[names(result_list[[i]]) == 'Очки'] <- paste0("Очки_", passed_comps$Дата[i])
@@ -78,16 +94,14 @@ results_sum$Среднее <- apply(X = select(results_sum, starts_with("Очк�
                              FUN = function(x) {round(mean(sort(x, decreasing = TRUE)[1:ifelse(length(x) < max_amount_of_starts_counted_for_sum, length(x), max_amount_of_starts_counted_for_sum)], na.rm = TRUE))})
 
 # Оставляем в базе только членов БФО
-reference_database <- reference_database[! is.na(reference_database$`Член БФО в текущем году`), ]
+reference_database <- reference_database[! is.na(reference_database$`Членство БФО в текущем году`), ]
 # Выбираем только нужные колонки из базы
-reference_database <- reference_database[, c("ФИ", "ГР", "Группа")]
-# Так как в элитном рейтинге могут принимать участие спортсмены из любой группы, оставляем только первую букву группы (= пол)
-reference_database$`Группа` <- substr(reference_database$`Группа`, 1, 1)
+reference_database <- reference_database[, c("ФИ", "ГР", "Пол")]
 
 sum <- left_join(reference_database, results_sum, by = c("ФИ", "ГР"))
 
 # Сортируем
-sum <- sum[order(sum$Группа, -sum$Сумма), ]
+sum <- sum[order(sum$Пол, -sum$Сумма), ]
 
 # Переименовываем колонки с очками так, как больше нравится Диме Давидовичу
 colnames(sum)[grep("Очки_\\d{8}", colnames(sum))] <- format(strptime(substring(colnames(sum)[grep("Очки_\\d{8}", colnames(sum))], 10, 14), format = "%m%d"), format = "%d.%m")
@@ -97,22 +111,22 @@ sum = filter(sum, ! is.na(Сумма))
 
 filename = paste0(ranking_type, "_ranking_sum_by_date_", last(passed_comps$Дата), ".xlsx")
 
-for(i in sort(unique(sum$Группа))) {
+for(i in sort(unique(sum$Пол))) {
   if(!file.exists(filename)) {
-    x = filter(sum, Группа == i)
+    x = filter(sum, Пол == i)
     x = cbind(`№` = 1:nrow(x), x, Место = 1:nrow(x))
     x$`Коллектив` <- NULL
     x$`Квал` <- NULL
-    x$`Группа` <- NULL
+    x$`Пол` <- NULL
     x <- x[! is.na(x$`Сумма`), ]
     write.xlsx(x, file = filename,
                sheetName = i, row.names = FALSE, showNA = FALSE)
   } else {
-    x = filter(sum, Группа == i)
+    x = filter(sum, Пол == i)
     x = cbind(`№` = 1:nrow(x), x, Место = 1:nrow(x))
     x$`Коллектив` <- NULL
     x$`Квал` <- NULL
-    x$`Группа` <- NULL
+    x$`Пол` <- NULL
     x <- x[! is.na(x$`Сумма`), ]
     write.xlsx(x, file = filename, append = TRUE,
                sheetName = i, row.names = FALSE, showNA = FALSE)

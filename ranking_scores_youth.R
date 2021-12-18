@@ -1,8 +1,8 @@
 ranking_scores_youth <- function(competition_date = NA,
-                           competition_name = NA,
-                           competition_distance = NA,
-                           ranking_type = c("youth", "junior"),
-                           competition_coefficient = NA) {
+                                 competition_name = NA,
+                                 competition_distance = NA,
+                                 ranking_type = c("youth", "junior"),
+                                 competition_coefficient = NA) {
   # Шапка файлов результатов должна быть следующей
   # ФИ;Коллектив;Квал;Номер;ГР;Результат;Место;Прим;Группа
   
